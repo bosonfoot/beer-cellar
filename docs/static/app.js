@@ -499,6 +499,19 @@ function syncCards() {
     cardDays.textContent = daysTd.textContent;
     daysTd.classList.forEach(c => { if (c.startsWith('days-')) cardDays.classList.add(c); });
 
+    // Merge days into the badge pill text for cards — e.g. "Drink within 330 days"
+    const d = parseInt(daysTd.textContent, 10);
+    if (!isNaN(d)) {
+      const cardBadge = card.querySelector('.badge');
+      const dw = d === 1 ? 'day' : 'days';
+      const status = badgeEl.textContent;
+      if (status === 'Drink Now')        cardBadge.textContent = `Drink within ${d} ${dw}`;
+      else if (status === 'Peak Approaching') cardBadge.textContent = `Peak in ${d} ${dw}`;
+      else if (status === 'Aging')       cardBadge.textContent = `Ready in ${d} ${dw}`;
+    }
+    // Hide the now-redundant standalone days number
+    cardDays.hidden = true;
+
     card.addEventListener('click', () => openModal(id));
     grid.appendChild(card);
   });
