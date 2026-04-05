@@ -1,0 +1,533 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+
+:root {
+  --bg: #1a1a1a;
+  --surface: #242424;
+  --surface2: #2e2e2e;
+  --row-even: #1f1f1f;
+  --row-odd: #242424;
+  --border: #3a3a3a;
+  --text: #e8e8e8;
+  --text-muted: #888;
+  --accent: #c9943a;    /* amber */
+
+  --green: #1e5c30;
+  --green-text: #7eda9a;
+  --yellow: #7a6200;
+  --yellow-text: #f0c040;
+  --grey: #3a3a3a;
+  --grey-text: #aaa;
+  --blue: #1a3a5c;
+  --blue-text: #7eb8f7;
+  --pink: #5c1a3a;
+  --pink-text: #f7a8d0;
+  --red: #7d2e2e;
+  --red-text: #f08080;
+  --dim: #2a2a2a;
+  --dim-text: #666;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Header ─────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.header-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.beer-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Main layout ─────────────────────────── */
+main {
+  max-width: min(1440px, 96vw);
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Controls ────────────────────────────── */
+.controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.controls input,
+.controls select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.controls input { flex: 1; }
+.controls input:focus,
+.controls select:focus {
+  border-color: var(--accent);
+}
+
+/* ── Table ───────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+thead th {
+  background: var(--surface);
+  color: var(--text-muted);
+  text-align: left;
+  padding: 0.6rem 0.875rem;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+thead th.col-img { width: 60px; padding-right: 0; }
+
+thead th.sortable { cursor: pointer; }
+thead th.sortable:hover { color: var(--text); }
+thead th.sort-asc .sort-arrow::after  { content: ' ▲'; font-size: 0.7em; color: var(--accent); }
+thead th.sort-desc .sort-arrow::after { content: ' ▼'; font-size: 0.7em; color: var(--accent); }
+
+/* Hidden until JS finishes calculating badges, days, and sort */
+#tableBody { visibility: hidden; }
+#tableBody.ready { visibility: visible; }
+
+/* Alternating rows */
+tbody tr:nth-child(odd)  { background: var(--row-odd); }
+tbody tr:nth-child(even) { background: var(--row-even); }
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr.beer-row { cursor: pointer; }
+tbody tr.beer-row:hover { background: var(--surface2) !important; }
+
+td {
+  padding: 0.65rem 0.875rem;
+  vertical-align: middle;
+}
+
+td.col-img {
+  padding: 0.4rem 0.5rem 0.4rem 0.875rem;
+  width: 60px;
+}
+
+/* Cells that must never wrap — date hyphens and numbers break without this */
+td.col-year, td.col-abv, td.col-drink-after, td.col-drink-by, td.col-days-left {
+  white-space: nowrap;
+}
+
+/* Brewer: nowrap + ellipsis for degenerate long names */
+td.col-brewer {
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.beer-name { font-weight: 500; color: var(--text); }
+td.col-year, th[data-col="year"] { color: var(--text-muted); font-variant-numeric: tabular-nums; width: 4rem; }
+td.col-rating, th.col-rating { color: var(--accent); font-variant-numeric: tabular-nums; width: 5rem; text-align: right; }
+td.col-rating { padding-right: 1.25rem; }
+
+/* Beer thumbnail */
+.beer-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  background: var(--surface2);
+}
+
+#emptyRow td {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem;
+}
+
+/* ── Status badges ───────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-drink-now      { background: var(--green);  color: var(--green-text); }
+.badge-approaching    { background: var(--pink);   color: var(--pink-text); }
+.badge-aging          { background: var(--blue);   color: var(--blue-text); }
+.badge-past-peak      { background: var(--red);    color: var(--red-text); }
+.badge-unknown        { background: var(--dim);    color: var(--dim-text); }
+.badge-imbibed        { background: #3a2e1a;       color: #a0845a; }
+
+/* Days Left colors — base color matches the status badge background */
+td.days-drink-now  { color: var(--green); }
+td.days-approaching { color: var(--pink-text); }
+td.days-aging      { color: var(--blue-text); }
+/* Urgency overrides for Drink Now (applied in addition to days-drink-now) */
+td.days-soon       { color: var(--yellow-text); }
+td.days-urgent     { color: var(--red-text); font-weight: 600; }
+
+/* Quantity pill */
+.qty-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  background: var(--surface2);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Imbibed rows are visually dimmed */
+tr[data-imbibed] td { opacity: 0.5; }
+
+/* ── Modal ───────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-overlay[hidden] { display: none; }
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: min(680px, 94vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+}
+.modal-close:hover { color: var(--text); background: var(--surface2); }
+
+/* Modal header: image + name/brewer side by side */
+.modal-header {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.modal-label-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--surface2);
+}
+
+.modal-header-text { flex: 1; min-width: 0; }
+.modal-beer-name   { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; }
+.modal-brewer      { color: var(--accent); font-size: 0.95rem; margin-bottom: 0; }
+
+.modal-window {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modal-window-label { color: var(--text-muted); font-size: 0.8rem; }
+.modal-window-value { font-weight: 600; font-size: 0.95rem; }
+
+.modal-dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-date-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.2rem; }
+.modal-date-value { font-size: 0.9rem; }
+
+.modal-section { margin-bottom: 1.25rem; }
+.modal-section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.modal-section-body {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.modal-section-body a { color: var(--accent); }
+
+/* ── Imbibe button ───────────────────────── */
+.modal-imbibe {
+  margin-bottom: 1.5rem;
+}
+
+.btn-imbibe {
+  background: var(--green);
+  color: var(--green-text);
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.btn-imbibe:hover { filter: brightness(1.2); }
+
+.imbibe-confirm { margin-top: 0.5rem; }
+
+.imbibe-notes {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 0.5rem;
+}
+.imbibe-notes:focus { border-color: var(--accent); }
+
+.imbibe-actions { display: flex; gap: 0.5rem; }
+
+.btn-imbibe-confirm {
+  background: var(--green);
+  color: var(--green-text);
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-imbibe-confirm:hover { filter: brightness(1.2); }
+
+.btn-imbibe-cancel {
+  background: var(--surface2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn-imbibe-cancel:hover { color: var(--text); }
+
+/* ── Responsive table ────────────────────── */
+
+/* Tablet (~768px): hide ABV, Rating, and Drink After */
+@media (max-width: 860px) {
+  th[data-col="abv"], td.col-abv,
+  th[data-col="untappd_rating"], td.col-rating,
+  th[data-col="drink_after"], td.col-drink-after { display: none; }
+}
+
+/* Mobile (~540px): also hide Drink By and Year; keep Name, Brewer, Days Left, Status */
+@media (max-width: 540px) {
+  th[data-col="year"], td.col-year,
+  th[data-col="drink_by"], td.col-drink-by { display: none; }
+  td.col-brewer { max-width: 90px; }
+
+  /* Full-width layout on narrow phones — let padding provide the gutter */
+  main { max-width: 100%; margin: 1rem 0; padding: 0 0.75rem; }
+  /* Match header padding to main so content aligns visually */
+  header { padding: 0 0.75rem; }
+  /* Allow controls to wrap on narrow phones */
+  .controls { flex-wrap: wrap; }
+}
+
+/* ── View toggle button ──────────────────────────────────────────────────── */
+.view-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.view-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Ensure [hidden] isn't overridden by display rules on these flex/grid elements */
+#sortControls[hidden] { display: none; }
+#cardGrid[hidden]     { display: none; }
+.table-wrap[hidden]   { display: none; }
+
+/* ── Card-view sort controls ─────────────────────────────────────────────── */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+.sort-controls select,
+.sort-controls .card-sort-dir {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+}
+.sort-controls select:focus,
+.sort-controls .card-sort-dir:focus { border-color: var(--accent); }
+.sort-controls .card-sort-dir { font-size: 0.75rem; padding: 0.4rem 0.55rem; }
+
+/* ── Card grid ───────────────────────────────────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.875rem;
+}
+
+.beer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  align-items: flex-start;
+}
+.beer-card:hover { background: var(--surface2); border-color: var(--accent); }
+.beer-card[data-imbibed] { opacity: 0.5; }
+.beer-card { min-width: 0; } /* grid items don't auto-shrink — allow 1fr to apply */
+
+.card-img-wrap { flex-shrink: 0; }
+.card-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  background: var(--surface2);
+}
+
+.card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+
+.card-header { min-width: 0; }
+.card-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-brewer {
+  color: var(--accent);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  align-items: center;
+}
+.card-sep { color: var(--border); }
+.card-rating { color: var(--accent); }
+
+.card-window {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+  flex-wrap: wrap;
+}
+
+/* Days colors for span elements (td-qualified rules don't apply to spans) */
+span.days-drink-now  { color: var(--green-text); font-size: 0.82rem; }
+span.days-approaching { color: var(--pink-text); font-size: 0.82rem; }
+span.days-aging      { color: var(--blue-text); font-size: 0.82rem; }
+span.days-soon       { color: var(--yellow-text); font-size: 0.82rem; }
+span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82rem; }
+
+@media (max-width: 640px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .card-thumb { width: 60px; height: 60px; }
+}

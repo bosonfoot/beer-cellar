@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beer Cellar</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>🍺 Beer Cellar</h1>
+    <span class="beer-count" id="beerCount"></span>
+  </div>
+</header>
+
+<main>
+  <div class="controls">
+    <input type="text" id="filterText" placeholder="Search by name or brewer…" autocomplete="off">
+    <select id="filterStatus">
+      <option value="">All statuses</option>
+      <option value="Drink Now">Drink Now</option>
+      <option value="Peak Approaching">Peak Approaching</option>
+      <option value="Aging">Aging</option>
+      <option value="Past Peak">Past Peak</option>
+      <option value="Unknown">Unknown</option>
+      <option value="Happily Imbibed">Happily Imbibed</option>
+    </select>
+    <button id="viewToggle" class="view-toggle">
+      <span class="view-toggle-icon">⊞</span>
+      <span class="view-toggle-label">Cards</span>
+    </button>
+  </div>
+
+  <div id="sortControls" class="sort-controls" hidden>
+    <label for="cardSort">Sort by</label>
+    <select id="cardSort">
+      <option value="days_left">Days Left</option>
+      <option value="name">Name</option>
+      <option value="year">Year</option>
+      <option value="brewer">Brewer</option>
+      <option value="abv">ABV</option>
+      <option value="untappd_rating">Rating</option>
+      <option value="drink_after">Drink After</option>
+      <option value="drink_by">Drink By</option>
+    </select>
+    <button id="cardSortDir" class="card-sort-dir">▲</button>
+  </div>
+
+  <div class="table-wrap">
+  <table id="cellarTable">
+    <thead>
+      <tr>
+        <th class="col-img"></th>
+        <th data-col="name" class="sortable">Beer <span class="sort-arrow"></span></th>
+        <th data-col="year" class="sortable">Year <span class="sort-arrow"></span></th>
+        <th data-col="brewer" class="sortable">Brewer <span class="sort-arrow"></span></th>
+        <th data-col="abv" class="sortable">ABV <span class="sort-arrow"></span></th>
+        <th data-col="untappd_rating" class="sortable col-rating">Rating <span class="sort-arrow"></span></th>
+        <th data-col="drink_after" class="sortable">Drink After <span class="sort-arrow"></span></th>
+        <th data-col="drink_by" class="sortable">Drink By <span class="sort-arrow"></span></th>
+        <th data-col="days_left" class="sortable">Days Left <span class="sort-arrow"></span></th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      {% for beer in beers %}
+      <tr class="beer-row" data-id="{{ beer.id }}" {% if beer.date_imbibed %}data-imbibed="1"{% endif %}>
+        <td class="col-img">
+          <img class="beer-thumb"
+               src="{{ beer.image_path }}"
+               alt="{{ beer.name }}"
+               onerror="this.src='/static/images/default.svg'">
+        </td>
+        <td class="beer-name">
+          {{ beer.name }}
+          {% if beer.quantity and beer.quantity > 1 %}
+          <span class="qty-badge">×{{ beer.quantity }}</span>
+          {% endif %}
+        </td>
+        <td class="col-year">{{ beer.year or '—' }}</td>
+        <td class="col-brewer">{{ beer.brewer | short_brewer }}</td>
+        <td class="col-abv">{{ ('%.1f%%' % beer.abv) if beer.abv is not none else '—' }}</td>
+        <td class="col-rating">{{ ('%.2f' % beer.untappd_rating) if beer.untappd_rating is not none else '—' }}</td>
+        <td class="col-drink-after">{{ beer.drink_after or '—' }}</td>
+        <td class="col-drink-by">{{ beer.drink_by or '—' }}</td>
+        <td class="col-days-left"
+            data-by="{{ beer.drink_by or '' }}"
+            data-after="{{ beer.drink_after or '' }}"
+            data-imbibed="{{ beer.date_imbibed or '' }}">—</td>
+        <td><span class="badge"
+                  data-after="{{ beer.drink_after or '' }}"
+                  data-by="{{ beer.drink_by or '' }}"
+                  data-imbibed="{{ beer.date_imbibed or '' }}"></span></td>
+      </tr>
+      {% else %}
+      <tr id="emptyRow"><td colspan="9">No beers in the cellar yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div id="cardGrid" class="card-grid" hidden></div>
+</main>
+
+<!-- Detail modal -->
+<div id="modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+  window.CELLAR_DATA_URL = window.CELLAR_DATA_URL || '/api/beers';
+</script>
+<script src="/static/app.js"></script>
+</body>
+</html>
