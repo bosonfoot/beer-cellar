@@ -373,8 +373,7 @@ function esc(str) {
 }
 
 function openModal(beerId) {
-  fetch(`/api/beers/${beerId}`)
-    .then(r => r.json())
+  fetch(`cellar.json`).then(r=>r.json()).then(beers=>beers.find(b=>b.id==beerId))
     .then(beer => {
       document.getElementById('modalContent').innerHTML = renderModal(beer);
       document.getElementById('modal').removeAttribute('hidden');

@@ -37,12 +37,19 @@ def export():
         json.dump(beers, f, indent=2)
     print(f"Wrote {len(beers)} beers to docs/cellar.json")
 
-    # 3. Copy static assets (CSS + JS)
-    for fname in ('style.css', 'app.js'):
-        shutil.copy(
-            os.path.join(BASE, 'static', fname),
-            os.path.join(docs_static, fname),
-        )
+    # 3. Copy style.css unchanged; patch app.js for static hosting
+    shutil.copy(os.path.join(BASE, 'static', 'style.css'),
+                os.path.join(docs_static, 'style.css'))
+
+    with open(os.path.join(BASE, 'static', 'app.js'), encoding='utf-8') as f:
+        app_js = f.read()
+    # Replace the API fetch+json chain with a cellar.json lookup
+    app_js = app_js.replace(
+        "fetch(`/api/beers/${beerId}`)\n    .then(r => r.json())",
+        "fetch(`cellar.json`).then(r=>r.json()).then(beers=>beers.find(b=>b.id==beerId))",
+    )
+    with open(os.path.join(docs_static, 'app.js'), 'w', encoding='utf-8') as f:
+        f.write(app_js)
 
     # 4. Copy images directory
     src_img = os.path.join(BASE, 'static', 'images')
@@ -73,11 +80,6 @@ def export():
     # Fix static asset paths: /static/ → static/
     rendered = rendered.replace('href="/static/', 'href="static/')
     rendered = rendered.replace('src="/static/', 'src="static/')
-    # Modal fetch: /api/beers/<id> → scan cellar.json
-    rendered = rendered.replace(
-        "fetch(`/api/beers/${beerId}`)",
-        "fetch(`cellar.json`).then(r=>r.json()).then(beers=>beers.find(b=>b.id==beerId))",
-    )
 
     out_path = os.path.join(docs, 'index.html')
     with open(out_path, 'w', encoding='utf-8') as f:
