@@ -62,6 +62,17 @@ elif not exact and existing_brewers:
 # Allow bypassing the fuzzy check for confirmed new breweries
 # (add "force": true to the JSON payload)
 
+# Brewery image fallback — if no beer-specific image, use brewery default
+image_url = data.get('image_url')
+if not image_url:
+    defaults_path = os.path.join(os.path.dirname(__file__), 'brewery_defaults.json')
+    if os.path.exists(defaults_path):
+        with open(defaults_path) as f:
+            brewery_defaults = json.load(f)
+        image_url = brewery_defaults.get(data['brewer'])
+        if image_url:
+            print(f"Using brewery default image for '{data['brewer']}'")
+
 beer_id = db.insert_beer(
     name=data['name'],
     brewer=data['brewer'],
@@ -74,7 +85,7 @@ beer_id = db.insert_beer(
     research=data.get('research'),
     food_pairings=data.get('food_pairings'),
     considerations=data.get('considerations'),
-    image_url=data.get('image_url'),
+    image_url=image_url,
     untappd_rating=data.get('untappd_rating'),
 )
 
