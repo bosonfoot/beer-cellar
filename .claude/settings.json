@@ -5,7 +5,7 @@
       "Bash(/c/Users/ldema/AppData/Local/Programs/Python/Python314/python.exe*)",
       "Edit(C:\\Users\\ldema\\OneDrive\\AI Workspace\\beer cellar\\*)",
       "Write(C:\\Users\\ldema\\OneDrive\\AI Workspace\\beer cellar\\*)",
-      "WebFetch(https://untappd.com/*)"
+      "WebFetch(domain:untappd.com)"
     ]
   }
 }

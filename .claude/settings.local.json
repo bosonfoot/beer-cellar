@@ -68,7 +68,13 @@
       "Bash(/c/Users/ldema/AppData/Local/Programs/Python/Python314/python.exe -c \"import app, db; db.init_db\\(\\); print\\('OK'\\)\")",
       "Bash(/c/Users/ldema/AppData/Local/Programs/Python/Python314/python.exe export_static.py)",
       "Bash(gh --version)",
-      "Bash(git --version)"
+      "Bash(git --version)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(node:*)",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(where node:*)",
+      "Bash(where py:*)"
     ]
   }
 }

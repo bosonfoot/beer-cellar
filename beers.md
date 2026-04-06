@@ -18,6 +18,7 @@ Floodland I want to be Known
 Floodland MMXXIV Gruner Weltliner
 
 3 Fonteinen 2018 Oude Geuze Cuvee Armond & Gaston
+3 Fonteinen Oude Geuze (bottled 2018-11-26, BB 2038-10-26) ✓ added
 3 Fonteinen Langste Nacht 2019 Karwiizaad
 
 Side Project Tete de Cuvee 2022
@@ -30,5 +31,7 @@ Cantillon Saint Lamvinus 2024
 Sangbleu 2025
 Magic Lambic 2025
 Ashanti 2025
+
+Holy Mountain Vesper (2025 bottling, 2 bottles) ✓ added
 
 
