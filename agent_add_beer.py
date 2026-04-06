@@ -90,3 +90,8 @@ beer_id = db.insert_beer(
 )
 
 print(f"Added '{data['name']}' with id={beer_id}")
+
+# Rebuild static site
+import subprocess
+script = os.path.join(os.path.dirname(__file__), 'export_static.py')
+subprocess.run([sys.executable, script], check=True)
