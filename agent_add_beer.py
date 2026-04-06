@@ -17,6 +17,7 @@ Example:
 import json
 import sys
 import os
+import difflib
 
 sys.path.insert(0, os.path.dirname(__file__))
 import db
@@ -34,6 +35,33 @@ for field in required:
         sys.exit(1)
 
 db.init_db()
+
+# Check brewer against existing entries
+import sqlite3
+con = sqlite3.connect(db.DB_PATH)
+existing_brewers = [r[0] for r in con.execute('SELECT DISTINCT brewer FROM beers').fetchall()]
+con.close()
+
+input_brewer = data['brewer']
+input_lower = input_brewer.lower()
+
+# Exact match (case-insensitive) — snap to existing casing
+exact = next((b for b in existing_brewers if b.lower() == input_lower), None)
+if exact and exact != input_brewer:
+    print(f"Brewer name corrected: '{input_brewer}' -> '{exact}' (matched existing entry)")
+    data['brewer'] = exact
+elif not exact and existing_brewers:
+    # Fuzzy match — warn if suspiciously close
+    matches = difflib.get_close_matches(input_brewer, existing_brewers, n=1, cutoff=0.6)
+    if matches:
+        print(f"Error: brewer '{input_brewer}' looks like a near-miss for existing entry '{matches[0]}'.")
+        print(f"If this is the same brewery, use '{matches[0]}' exactly.")
+        print(f"If it's genuinely a new brewery, re-run with force=true in the JSON to bypass this check.")
+        sys.exit(1)
+
+# Allow bypassing the fuzzy check for confirmed new breweries
+# (add "force": true to the JSON payload)
+
 beer_id = db.insert_beer(
     name=data['name'],
     brewer=data['brewer'],
