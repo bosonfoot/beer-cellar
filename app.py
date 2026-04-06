@@ -20,20 +20,27 @@ def short_brewer(name):
 
 def resolve_image(beer):
     """Return the URL path to the best available local image for this beer."""
-    # 1. Beer-specific image
+    # 1. Explicit image_url stored on the beer record
+    if beer.get('image_url'):
+        rel = beer['image_url'].lstrip('/')
+        if os.path.exists(os.path.join(os.path.dirname(__file__), rel)):
+            return beer['image_url']
+
+    # 2. Beer-specific image by DB id
     for ext in ('jpg', 'jpeg', 'png', 'webp'):
         path = os.path.join(STATIC_DIR, 'images', 'beers', f"beer_{beer['id']}.{ext}")
         if os.path.exists(path):
             return f"/static/images/beers/beer_{beer['id']}.{ext}"
 
-    # 2. Brewer logo
+    # 3. Brewery default image
     slug = brewer_slug(beer['brewer'])
-    for ext in ('png', 'jpg', 'jpeg', 'svg', 'webp'):
-        path = os.path.join(STATIC_DIR, 'images', 'brewers', f"{slug}.{ext}")
-        if os.path.exists(path):
-            return f"/static/images/brewers/{slug}.{ext}"
+    for folder in ('breweries', 'brewers'):
+        for ext in ('png', 'jpg', 'jpeg', 'svg', 'webp'):
+            path = os.path.join(STATIC_DIR, 'images', folder, f"{slug}.{ext}")
+            if os.path.exists(path):
+                return f"/static/images/{folder}/{slug}.{ext}"
 
-    # 3. Generic default
+    # 4. Generic default
     return '/static/images/default.svg'
 
 

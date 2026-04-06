@@ -17,7 +17,7 @@
     "year": 2018,
     "untappd_rating": 4.05,
     "imbibe_notes": null,
-    "image_path": "static/images/default.svg"
+    "image_path": "static/images/beers/beer_4009.jpeg"
   },
   {
     "id": 16,
@@ -317,7 +317,7 @@
     "year": 2025,
     "untappd_rating": 3.85,
     "imbibe_notes": null,
-    "image_path": "static/images/default.svg"
+    "image_path": "static/images/breweries/holy_mountain_brewing.png"
   },
   {
     "id": 5,
