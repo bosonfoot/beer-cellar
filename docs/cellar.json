@@ -1,5 +1,25 @@
 [
   {
+    "id": 26,
+    "name": "Oude Geuze",
+    "brewer": "3 Fonteinen",
+    "date_bottled": "2018-11-26",
+    "drink_after": "2020-11-26",
+    "drink_by": "2038-10-26",
+    "research": "Flagship gueuze from Brouwerij 3 Fonteinen. A blend of 1-, 2-, and 3-year-old lambics, unfiltered and unpasteurized, bottle-conditioned for at least 6 months. Spontaneous fermentation with wild yeasts, matured in oak casks. Aromas evolve from vibrant citrus and grassy notes to mellow oak and stone fruit with age. Can be cellared for several decades. Untappd: 4.05/5 (80,000+ ratings). https://untappd.com/b/brouwerij-3-fonteinen-3-fonteinen-oude-geuze/4009",
+    "food_pairings": "Aged cheeses, oysters, mussels, charcuterie, lemon-dressed seafood",
+    "considerations": "Bottled 26 Nov 2018. Best before 26 Oct 2038 (printed on bottle). No two bottlings are alike. Cellared properly, this bottle has 12+ years of drinking window remaining.",
+    "date_added": "2026-04-06",
+    "abv": 6.0,
+    "image_url": "/static/images/beers/beer_4009.jpeg",
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": 2018,
+    "untappd_rating": 4.05,
+    "imbibe_notes": null,
+    "image_path": "static/images/default.svg"
+  },
+  {
     "id": 16,
     "name": "Oude Geuze Cuvee Armand & Gaston",
     "brewer": "3 Fonteinen",
@@ -278,6 +298,26 @@
     "untappd_rating": 4.354,
     "imbibe_notes": null,
     "image_path": "static/images/beers/beer_6.webp"
+  },
+  {
+    "id": 27,
+    "name": "Vesper",
+    "brewer": "Holy Mountain Brewing",
+    "date_bottled": "2025-07-01",
+    "drink_after": "2025-10-01",
+    "drink_by": "2029-07-01",
+    "research": "Table beer from Holy Mountain Brewing (Seattle, WA). Pilsner malt, flaked rye and wheat; hopped with Styrian Golding and Cascade; fermented with Belgian yeast and conditioned with Brettanomyces. Low-ABV but complex \u2014 the Brett adds earthy, funky depth. Won Silver in 2026 Untappd Community Awards. No 2025-specific Untappd listing; current bottlings are logged to the base entry. https://untappd.com/b/holy-mountain-brewing-vesper/2515677",
+    "food_pairings": "Light charcuterie, soft cheeses, roast chicken, grain salads",
+    "considerations": "2025 bottling, likely summer. Exact bottle date unknown \u2014 estimated July 2025. Brett-conditioned table beer; drink young to fresh but will develop further over 2-3 years. 2 bottles in cellar.",
+    "date_added": "2026-04-06",
+    "abv": 3.8,
+    "image_url": "/static/images/breweries/holy_mountain_brewing.png",
+    "date_imbibed": null,
+    "quantity": 2,
+    "year": 2025,
+    "untappd_rating": 3.85,
+    "imbibe_notes": null,
+    "image_path": "static/images/default.svg"
   },
   {
     "id": 5,
