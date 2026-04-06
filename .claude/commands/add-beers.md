@@ -1,82 +1,94 @@
 # Add Beers from beers.md
 
-Read `beers.md`. For each beer not already in the database, research and insert it using this fast workflow:
+Read `beers.md`. For each beer not already in the database, research and insert it using this workflow:
 
 ## Web Fetch Strategy
 
-**Use `curl` (not WebFetch) for any site that may hang:**
-```bash
-curl --max-time 15 -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "URL"
-```
-WebFetch lacks a timeout and will hang indefinitely on slow servers. Use it only for Untappd (reliable). For everything else — Floodland bottle log, S3 images, unknown sites — use curl.
+- **Untappd search page**: JS-rendered — use **WebSearch** to find the beer ID, not a fetch
+- **Untappd beer page** (`untappd.com/b/{slug}/{id}`): use **WebFetch** (reliable, renders JS)
+- **Floodland bottle log, S3 images, unknown sites**: use **curl** — WebFetch may hang
+  ```bash
+  curl --max-time 15 -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" "URL"
+  ```
 
 ## Fast Research Workflow (time-box each beer to ~5 minutes)
 
-### Step 1 — Identify the exact beer (1 fetch max)
-Search Untappd: `https://untappd.com/search?q={brewery}+{beer+name}&type=beer`
-- Gets you the exact Untappd URL + beer ID immediately
-- If nothing found in 1 try, note "not on Untappd" and proceed with what you know
-- **If multiple vintages/editions exist** (e.g. 2023 and 2025 versions of the same beer): STOP and ask the user to disambiguate before proceeding. Do not guess.
+### Step 1 — Find the beer on Untappd (WebSearch)
+Search: `"{brewery}" "{beer name}" site:untappd.com`
+- Get the exact URL: `untappd.com/b/{slug}/{id}` — the numeric ID is what matters
+- If multiple vintages/editions exist (e.g. 2023 vs 2025): **STOP and ask the user** before proceeding
+- If not on Untappd: note it and proceed with what you know
 
-### Step 2 — Get data (1 fetch)
-Fetch `https://untappd.com/b/{slug}/{id}` for: name, ABV, description, bottling date, image URL
-- Image URL pattern: `assets.untappd.com/site/beer_logos/beer-{id}_{hash}_sm.jpeg`
-- `_lg.jpeg` is always 403 — don't try it
-- If image URL not found in page content, fetch it directly:
-  ```bash
-  curl --max-time 15 -sL -A "Mozilla/5.0" "https://untappd.com/b/{slug}/{id}" | grep -o 'beer_logos/beer-{id}[^"]*'
-  ```
+### Step 2 — Fetch beer data (WebFetch on the beer page)
+Fetch `https://untappd.com/b/{slug}/{id}` for: name, ABV, description, rating, and **image URL**.
 
-### Step 3 — Floodland beers only: get bottle log data AND image
+**Image URL — this is critical:** look for the pattern `beer_logos/beer-{id}_{hash}_sm.jpeg`
+- The hash is a short alphanumeric string (e.g. `7dc60`) embedded in the page — it's only visible via WebFetch (not curl)
+- Full URL: `https://assets.untappd.com/site/beer_logos/beer-{id}_{hash}_sm.jpeg`
+- `_lg.jpeg` is always 403 — only use `_sm.jpeg`
+- Do NOT use `next.untappd.com/og/beer/{id}` — that returns a social card composite, not label art
+- If no `beer_logos` URL is found: check `untappd.com/b/{slug}/{id}/photos` for user photos (`images.untp.beer/crop?width=1280`)
 
-**Extract all images from bottle log in one curl call:**
+### Step 3 — Floodland beers only: bottle log data AND image
 ```bash
 curl --max-time 15 -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
   "https://www.floodlandbrewing.com/bottlelog/" \
   | grep -o 'efcheckout/floodlandbrewing/content/[^"]*'
 ```
-This gives `path/Floodland-Brewing-{year}-{name}-image_set_1_img_1-{id}-large.webp` for each beer.
+Returns `path/Floodland-Brewing-{year}-{name}-image_set_1_img_1-{id}-large.webp` per beer.
 Full URL: `https://s3.amazonaws.com/{path}`
 
-The bottle log is the **authoritative source** for Floodland drink windows (Adam Paysse's notes). It's also where the best label images come from — prefer these over Untappd thumbnails.
+The bottle log is authoritative for Floodland drink windows (Adam Paysse's notes). Prefer its images over Untappd thumbnails. Always include this link in research: `[Floodland Brewing Bottle Log](https://www.floodlandbrewing.com/bottlelog/)`
 
-Always include this link in research: `[Floodland Brewing Bottle Log](https://www.floodlandbrewing.com/bottlelog/)`
-
-### Step 4 — Get a good image (1 fetch, optional)
-For small Untappd thumbnails (<5KB), try the photos page:
-`https://untappd.com/b/{slug}/{id}/photos`
-Look for `images.untp.beer/crop?width=1280` URLs — these are user check-in photos at 1280×1280.
-
-### Step 5 — Download image and insert (per beer, one at a time)
+### Step 4 — Download image
 ```bash
-# Download image
-curl --max-time 15 -sL -A "Mozilla/5.0" -o "static/images/beers/beer_{id}.{ext}" "{image_url}"
+curl --max-time 15 -sL -A "Mozilla/5.0" -o "static/images/beers/beer_{untappd_id}.{ext}" "{image_url}"
+```
+- Name the file using the **Untappd ID**, not the DB id (e.g. `beer_4009.jpeg`)
+- If no image found after one retry: omit `image_url` — `agent_add_beer.py` will fall back to the brewery default in `brewery_defaults.json`
 
-# Insert beer (get the assigned id first, then download image)
-python agent_add_beer.py '{...}'
+### Step 5 — Insert (one beer at a time)
+```bash
+python agent_add_beer.py '{
+  "name": "...",
+  "brewer": "...",
+  "year": 2024,
+  "abv": 6.0,
+  "quantity": 1,
+  "date_bottled": "YYYY-MM-DD",
+  "drink_after": "YYYY-MM-DD",
+  "drink_by": "YYYY-MM-DD",
+  "image_url": "/static/images/beers/beer_{untappd_id}.jpeg",
+  "untappd_rating": 3.9,
+  "research": "...",
+  "food_pairings": "...",
+  "considerations": "..."
+}'
 ```
 
-**Insert each beer immediately after researching it** — don't batch up research then insert later. Iterative progress is better.
+`agent_add_beer.py` automatically:
+1. Snaps brewer name casing to match existing DB entries
+2. Blocks near-miss brewer names (e.g. "Brouwerij 3 Fonteinen" → error, use "3 Fonteinen")
+3. Falls back to `brewery_defaults.json` image if no `image_url` given
+4. Rebuilds the static site (`export_static.py`)
+5. Commits and pushes to GitHub
 
-## Rules
-- If a fetch returns wrong data or fails: try ONE alternate source, then move on — don't retry
-- If curl hits `--max-time`, skip image fetch and use brewer logo fallback
-- Insert each beer as soon as its data is ready — don't wait until all are researched. Iterative progress is preferred.
-- After all beers inserted, run: `python -c "import app, db; db.init_db(); print('OK')"`
-- Flag any beers that are past their drink_by date
+**Insert each beer immediately after researching it** — don't batch.
+
+### Step 6 — Update beers.md
+Mark each inserted beer in `beers.md` with `✓ added` on the same line, or add a new line if it came from the chat.
+
+## Brewer name rules
+- Match existing DB entries exactly — query `SELECT DISTINCT brewer FROM beers` if unsure
+- Drop foreign-language prefixes: "Brouwerij", "Brasserie", "Cervecería" etc.
+- Keep English "Brewing" / "Brewing Co." if it's genuinely part of the name
 
 ## Year field rules
-- Always populate `year` if there is any year information available — from the beer name, Untappd, or the bottle log.
-- For blend beers with dual vintages (e.g. "MMXXIII/MMXXIV", "2022-2023 Blend"): use the **later** vintage year. The name already communicates the blend; the year field is for sorting and display.
-- Roman numerals in Floodland names encode the year: MMXXI=2021, MMXXII=2022, MMXXIII=2023, MMXXIV=2024, MMXXV=2025.
-- If the only year clue is the bottling date, use the bottling year as a fallback rather than leaving it blank.
+- Always populate `year` if any year info is available
+- Dual vintages (e.g. "MMXXIII/MMXXIV"): use the **later** year
+- Roman numerals: MMXXI=2021, MMXXII=2022, MMXXIII=2023, MMXXIV=2024, MMXXV=2025
+- If only the bottling date is known, use the bottling year
 
-## Python for downloading images (fallback if curl unavailable)
-```python
-import urllib.request
-headers = {'User-Agent': 'Mozilla/5.0'}
-req = urllib.request.Request(url, headers=headers)
-with urllib.request.urlopen(req, timeout=10) as r:
-    data = r.read()
-open(dest, 'wb').write(data)
-```
+## Other rules
+- Flag any beers past their `drink_by` date
+- If a fetch fails or returns wrong data: try ONE alternate source, then move on

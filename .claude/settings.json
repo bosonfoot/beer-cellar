@@ -2,10 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(curl --max-time*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git log*)",
+      "Bash(git status*)",
       "Bash(/c/Users/ldema/AppData/Local/Programs/Python/Python314/python.exe*)",
       "Edit(C:\\Users\\ldema\\OneDrive\\AI Workspace\\beer cellar\\*)",
       "Write(C:\\Users\\ldema\\OneDrive\\AI Workspace\\beer cellar\\*)",
-      "WebFetch(domain:untappd.com)"
+      "WebFetch(domain:untappd.com)",
+      "WebFetch(domain:assets.untappd.com)",
+      "WebFetch(domain:holymountainbrewing.com)",
+      "WebFetch(domain:craftpeak-cooler-images.imgix.net)",
+      "WebFetch(domain:www.floodlandbrewing.com)",
+      "WebFetch(domain:s3.amazonaws.com)",
+      "WebSearch(*)"
     ]
   }
 }

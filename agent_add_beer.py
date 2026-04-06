@@ -93,5 +93,13 @@ print(f"Added '{data['name']}' with id={beer_id}")
 
 # Rebuild static site
 import subprocess
-script = os.path.join(os.path.dirname(__file__), 'export_static.py')
+repo = os.path.dirname(__file__)
+script = os.path.join(repo, 'export_static.py')
 subprocess.run([sys.executable, script], check=True)
+
+# Commit and push
+subprocess.run(['git', 'add', '-A'], cwd=repo, check=True)
+subprocess.run(['git', 'commit', '--allow-empty', '-m',
+    f"Add {data['name']} ({data['brewer']})"], cwd=repo, check=True)
+subprocess.run(['git', 'push'], cwd=repo, check=True)
+print("Committed and pushed.")
