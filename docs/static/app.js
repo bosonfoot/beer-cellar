@@ -824,7 +824,7 @@ document.getElementById('tableBody').classList.add('ready');
             <option value="">—</option>
             ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('')}
           </select>
-          <input class="add-field" id="f-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px" disabled>
+          <input class="add-field" id="f-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px">
         </div>
         <label>ABV</label>
         <input class="add-field" id="f-abv" type="number" step="0.1" min="0" max="100" value="${beer.abv != null ? beer.abv : ''}">
@@ -844,12 +844,6 @@ document.getElementById('tableBody').classList.add('ready');
         <button class="btn-secondary" id="backToStep2Btn">${state.results.length ? '← Back' : '← Back'}</button>
         <button class="btn-primary" id="submitBeerBtn">Add to Cellar</button>
       </div>`;
-
-    // Enable day input only when month is chosen
-    document.getElementById('f-bottled-m').addEventListener('change', function () {
-      document.getElementById('f-bottled-d').disabled = !this.value;
-      if (!this.value) document.getElementById('f-bottled-d').value = '';
-    });
 
     document.getElementById('backToStep2Btn').addEventListener('click', () => {
       if (state.results.length) renderStep2(); else renderStep1();
