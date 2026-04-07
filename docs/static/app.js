@@ -1,6 +1,7 @@
 'use strict';
 
 const DATA_URL = window.CELLAR_DATA_URL || '/api/beers';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── Status & Days Left logic ──────────────────────────────────────────────────
 
@@ -744,7 +745,6 @@ document.getElementById('tableBody').classList.add('ready');
 (function () {
   if (!document.getElementById('addBeerBtn')) return; // read-only / static site
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // Inject modal DOM once
   const overlay = document.createElement('div');
