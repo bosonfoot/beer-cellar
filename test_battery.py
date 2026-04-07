@@ -373,15 +373,15 @@ def run_all(base_url, verbose=False):
     skipped = sum(1 for r in results if r[0] == 'SKIP')
     total = len(results)
 
-    print(f'{"─" * 60}')
+    print('-' * 60)
     for status, name, detail in results:
         if status == 'PASS' and not verbose:
             continue
-        icon = {'PASS': '✓', 'FAIL': '✗', 'SKIP': '○'}[status]
-        print(f'  {icon} {name}')
+        icon = {'PASS': 'PASS', 'FAIL': 'FAIL', 'SKIP': 'SKIP'}[status]
+        print(f'  [{icon}] {name}')
         if detail:
-            print(f'      {detail}')
-    print(f'{"─" * 60}')
+            print(f'         {detail}')
+    print('-' * 60)
     print(f'  {passed} passed  {failed} failed  {skipped} skipped  ({total} total)')
     print()
 
