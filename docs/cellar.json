@@ -565,5 +565,26 @@
     "imbibe_notes": null,
     "label": null,
     "image_path": "static/images/beers/beer_20.jpeg"
+  },
+  {
+    "id": 38,
+    "name": "Floodland Brewing Chimacum Valley (2021/2022)",
+    "brewer": "Floodland Brewing",
+    "date_bottled": null,
+    "drink_after": null,
+    "drink_by": null,
+    "research": null,
+    "food_pairings": null,
+    "considerations": "This beer was created using 2021 and 2022 harvest raw spelt grown organically by Keith Kisler and family in the Chimacum Valley on the Olympic Peninsula. In late 2021 we brewed saison with the spelt and a variety of organic barley. The beer fermented and further aged in barrel for over a year before blending with an equal portion of young beer brewed with 2022 spelt.\nThis beer is an attempt to showcase the work done at Chimacum Valley Grainery.\nRefermented to condition in the bottle with the residual sugar from the young beer.\n\nBottled 02/23/2023",
+    "date_added": "2026-04-07",
+    "abv": 5.69,
+    "image_url": "/static/images/beers/beer_5453175.jpeg",
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": 2021,
+    "untappd_rating": 4.31828,
+    "imbibe_notes": null,
+    "label": null,
+    "image_path": "static/images/beers/beer_5453175.jpeg"
   }
 ]

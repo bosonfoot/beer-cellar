@@ -81,7 +81,11 @@
       "Bash(python -c \"import json; beers=json.load\\(open\\('docs/cellar.json'\\)\\); [print\\(f'{b[\\\\\"id\\\\\"]}: {b[\\\\\"brewer\\\\\"]} - {b[\\\\\"name\\\\\"]} \\({b.get\\(\\\\\"year\\\\\",\\\\\"\\\\\"\\)}\\) qty={b.get\\(\\\\\"quantity\\\\\",1\\)} after={b.get\\(\\\\\"drink_after\\\\\",\\\\\"\\\\\"\\)} by={b.get\\(\\\\\"drink_by\\\\\",\\\\\"\\\\\"\\)} abv={b.get\\(\\\\\"abv\\\\\",\\\\\"\\\\\"\\)} rating={b.get\\(\\\\\"untappd_rating\\\\\",\\\\\"\\\\\"\\)} bottled={b.get\\(\\\\\"date_bottled\\\\\",\\\\\"\\\\\"\\)} imbibed={b.get\\(\\\\\"date_imbibed\\\\\",\\\\\"\\\\\"\\)}'\\) for b in beers]\")",
       "Bash(curl -s --max-time 15 \"https://www.floodlandbrewing.com/bottlelog/\")",
       "Bash(sed 's/<[^>]*>//g')",
-      "Bash(python -c \"import db; db.init_db\\(\\); print\\('DB migrated OK'\\)\")"
+      "Bash(python -c \"import db; db.init_db\\(\\); print\\('DB migrated OK'\\)\")",
+      "Skill(claude-api)",
+      "Bash(python -c \"import json; data=json.load\\(open\\('docs/cellar.json'\\)\\); beers=[b for b in data['beers'] if b.get\\('image_url'\\)]; print\\(len\\(beers\\), 'beers with image_url'\\); print\\(beers[0]['image_url'] if beers else 'none'\\)\")",
+      "Bash(python -c \"import json; data=json.load\\(open\\('docs/cellar.json'\\)\\); beers=[b for b in data if b.get\\('image_url'\\)]; print\\(len\\(beers\\), 'beers with image_url'\\); print\\(beers[0].get\\('image_url'\\) if beers else 'none'\\)\")",
+      "Bash(python export_static.py)"
     ]
   }
 }

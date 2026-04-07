@@ -875,6 +875,7 @@ document.getElementById('tableBody').classList.add('ready');
       untappd_rating: rating ? parseFloat(rating) : null,
       considerations: considerations || null,
       image_url: state.selected ? (state.selected.image_url || null) : null,
+      style: state.selected ? (state.selected.style || null) : null,
       label: label || null,
     };
 
@@ -904,9 +905,59 @@ document.getElementById('tableBody').classList.add('ready');
         <div class="add-beer-success-icon">🍺</div>
         <div class="add-beer-success-name">${esc(beer.name)}</div>
         <div class="add-beer-success-brewer">${esc(beer.brewer)}</div>
-        <button class="btn-primary" id="addBeerDoneBtn">Done</button>
+        <div class="research-status" id="researchStatus">Researching drink window…</div>
+        <button class="btn-primary" id="addBeerDoneBtn" style="margin-top:1rem">Done</button>
       </div>`;
     document.getElementById('addBeerDoneBtn').addEventListener('click', closeModal);
+
+    // Poll for drink window research results (written by background agent)
+    let attempts = 0;
+    const poll = setInterval(() => {
+      if (++attempts > 30) {  // give up after 90 seconds
+        clearInterval(poll);
+        const el = document.getElementById('researchStatus');
+        if (el) el.textContent = 'No drink window found — you can add it manually later.';
+        return;
+      }
+      fetch(`/api/beers/${beer.id}`)
+        .then(r => r.json())
+        .then(updated => {
+          if (updated.drink_after || updated.drink_by) {
+            clearInterval(poll);
+            const el = document.getElementById('researchStatus');
+            if (el) el.textContent = '✓ Drink window found';
+            updateRowFromResearch(updated);
+          }
+        })
+        .catch(() => {});
+    }, 3000);
+  }
+
+  function updateRowFromResearch(beer) {
+    const row = document.querySelector(`tr.beer-row[data-id="${beer.id}"]`);
+    if (!row) return;
+
+    // Update date cells
+    const afterTd = row.querySelector('td.col-drink-after');
+    const byTd = row.querySelector('td.col-drink-by');
+    const daysTd = row.querySelector('td.col-days-left');
+    const badgeEl = row.querySelector('.badge');
+
+    if (afterTd) afterTd.textContent = beer.drink_after || '—';
+    if (byTd)    byTd.textContent    = beer.drink_by    || '—';
+
+    if (daysTd) {
+      daysTd.dataset.after = beer.drink_after || '';
+      daysTd.dataset.by    = beer.drink_by    || '';
+    }
+    if (badgeEl) {
+      badgeEl.dataset.after = beer.drink_after || '';
+      badgeEl.dataset.by    = beer.drink_by    || '';
+    }
+
+    applyBadges();
+    sortTable();
+    syncCards();
   }
 
   // ── Inject new row into the live table ───────────────────────────────────

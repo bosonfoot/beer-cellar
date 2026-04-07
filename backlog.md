@@ -7,3 +7,5 @@ Remove items once completed.
 
 <!-- Add items below this line -->
 
+- Research cloud hosting options: Azure (user has MSDN/employee access) and free tiers (Railway, Render, Fly.io). Goal: host Flask app so add-beer flow works from any device, not just local machine.
+

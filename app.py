@@ -68,13 +68,22 @@ def check_auth():
         abort(403)
 
 
-def _publish_background(name, brewer):
+def _publish_background(beer_id, data):
     if not _publish_lock.acquire(blocking=False):
         return
     try:
+        import research_agent
+        research_agent.run(
+            beer_id=beer_id,
+            name=data['name'],
+            brewer=data['brewer'],
+            style=data.get('style'),
+            year=data.get('year'),
+        )
         subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
         subprocess.run(['git', 'add', '-A'], cwd=REPO)
-        subprocess.run(['git', 'commit', '--allow-empty', '-m', f'Add {name} ({brewer})'], cwd=REPO)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m',
+                        f'Add {data["name"]} ({data["brewer"]})'], cwd=REPO)
         subprocess.run(['git', 'push'], cwd=REPO)
     finally:
         _publish_lock.release()
@@ -123,7 +132,7 @@ def api_add_beer():
         label=data.get('label'),
     )
     beer = enrich(db.get_beer(beer_id))
-    t = threading.Thread(target=_publish_background, args=(data['name'], data['brewer']), daemon=True)
+    t = threading.Thread(target=_publish_background, args=(beer_id, data), daemon=True)
     t.start()
     return jsonify(beer), 201
 
