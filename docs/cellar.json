@@ -607,5 +607,26 @@
     "imbibe_notes": null,
     "label": "Test",
     "image_path": "static/images/beers/beer_6417141.jpeg"
+  },
+  {
+    "id": 35,
+    "name": "Floodland Brewing Calling Out to Psychic Death (2025 Blend)",
+    "brewer": "Floodland Brewing",
+    "date_bottled": null,
+    "drink_after": null,
+    "drink_by": null,
+    "research": null,
+    "food_pairings": null,
+    "considerations": "Ale Fermented in Oak\r\n\r\nCalling Out to Psychic Death is a dry hopped blend of barrel aged saison.\r\n\r\nThe 2025 blend was made from 18-month aged high gravity spelt saison, foudre fermented oat and spelt saison, and wheat saison fermented in tank and aged in barrel. The blend was assembled and then dry hopped.\r\n\r\nThis beer was refermented to condition in the bottle.\r\n\r\nDrink fresh. Do not age further.\r\n\r\nBottled 04/30/2025\r\n\r\nConditioned with: Organic cane sugar.\r\nCellar: Drink fresh. Do not age further.\r\n",
+    "date_added": "2026-04-07",
+    "abv": 6.41,
+    "image_url": "/static/images/beers/beer_6343714.jpeg",
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": null,
+    "untappd_rating": 4.45497,
+    "imbibe_notes": null,
+    "label": "Test",
+    "image_path": "static/images/beers/beer_6343714.jpeg"
   }
 ]
