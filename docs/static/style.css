@@ -815,6 +815,72 @@ span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82
 
 .badge-test { background: #3a2a5c; color: #c9b3f7; }
 
+/* ── Beer mug research animation ─────────── */
+.beer-mug-loader {
+  display: inline-flex;
+  align-items: center;
+  margin: 1.2rem 0 0.4rem;
+}
+
+.mug-body {
+  width: 44px;
+  height: 54px;
+  border: 3px solid #c8952a;
+  border-radius: 2px 2px 8px 8px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(200, 149, 42, 0.08);
+}
+
+.mug-liquid {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: #c8952a;
+  overflow: hidden;
+  animation: beer-fill 2s ease-in-out infinite alternate;
+}
+
+@keyframes beer-fill {
+  0%   { height: 12px; }
+  100% { height: 44px; }
+}
+
+.mug-foam {
+  height: 10px;
+  background: #f0e8d0;
+  animation: foam-sway 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes foam-sway {
+  0%   { border-radius: 60% 40% 0 0 / 8px 8px 0 0; }
+  100% { border-radius: 40% 60% 0 0 / 8px 8px 0 0; }
+}
+
+.mug-bubble {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: rgba(255, 220, 120, 0.75);
+  border-radius: 50%;
+  bottom: 10px;
+  animation: bubble-rise 1.6s ease-in infinite;
+}
+
+@keyframes bubble-rise {
+  0%   { opacity: 0.9; transform: translateY(0) scale(1); }
+  80%  { opacity: 0.4; }
+  100% { opacity: 0;   transform: translateY(-36px) scale(0.6); }
+}
+
+.mug-handle {
+  width: 14px;
+  height: 28px;
+  border: 3px solid #c8952a;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  margin-left: -2px;
+  flex-shrink: 0;
+}
+
 .research-status {
   font-size: 0.8rem;
   color: var(--text-muted);

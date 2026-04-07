@@ -940,9 +940,19 @@ document.getElementById('tableBody').classList.add('ready');
     body().innerHTML = `
       ${stepIndicator(4)}
       <div class="add-beer-success">
-        <div class="add-beer-success-icon">🍺</div>
         <div class="add-beer-success-name">${esc(beer.name)}</div>
         <div class="add-beer-success-brewer">${esc(beer.brewer)}</div>
+        <div id="researchAnim" class="beer-mug-loader" aria-hidden="true">
+          <div class="mug-body">
+            <div class="mug-liquid" id="mugLiquid">
+              <div class="mug-foam"></div>
+              <span class="mug-bubble" style="left:28%;animation-delay:0s"></span>
+              <span class="mug-bubble" style="left:55%;animation-delay:0.6s"></span>
+              <span class="mug-bubble" style="left:42%;animation-delay:1.2s"></span>
+            </div>
+          </div>
+          <div class="mug-handle"></div>
+        </div>
         <div class="research-status" id="researchStatus">Researching drink window…</div>
         <button class="btn-primary" id="addBeerDoneBtn" style="margin-top:1rem">Done</button>
       </div>`;
@@ -953,6 +963,8 @@ document.getElementById('tableBody').classList.add('ready');
     const poll = setInterval(() => {
       if (++attempts > 30) {  // give up after 90 seconds
         clearInterval(poll);
+        const anim = document.getElementById('researchAnim');
+        if (anim) anim.hidden = true;
         const el = document.getElementById('researchStatus');
         if (el) el.textContent = 'No drink window found — you can add it manually later.';
         return;
@@ -962,6 +974,8 @@ document.getElementById('tableBody').classList.add('ready');
         .then(updated => {
           if (updated.drink_after || updated.drink_by) {
             clearInterval(poll);
+            const anim = document.getElementById('researchAnim');
+            if (anim) anim.hidden = true;
             const el = document.getElementById('researchStatus');
             if (el) el.textContent = '✓ Drink window found';
             updateRowFromResearch(updated);
