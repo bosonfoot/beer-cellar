@@ -42,11 +42,13 @@ If you cannot find reliable aging information, set the date fields to null."""
 
 
 def run(beer_id, name, brewer, style=None, year=None):
-    """Research drink window for a beer and update the DB. Silently returns on any error."""
+    """Research drink window for a beer and update the DB."""
     api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
+        print(f'[research] No ANTHROPIC_API_KEY in environment — skipping')
         return
 
+    print(f'[research] Starting research for beer {beer_id}: "{name}" by {brewer}')
     client = anthropic.Anthropic(api_key=api_key)
 
     prompt = f'Research the drinking window for: "{name}" by {brewer}'
@@ -55,6 +57,7 @@ def run(beer_id, name, brewer, style=None, year=None):
     if year:
         prompt += f', Vintage: {year}'
 
+    print(f'[research] Prompt: {prompt}')
     messages = [{"role": "user", "content": prompt}]
 
     # web_search is a server-side tool — Anthropic runs the actual search.
@@ -63,7 +66,8 @@ def run(beer_id, name, brewer, style=None, year=None):
 
     response = None
     try:
-        for _ in range(5):  # max 5 continuations for pause_turn
+        for i in range(5):  # max 5 continuations for pause_turn
+            print(f'[research] API call #{i+1}...')
             response = client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=1024,
@@ -71,6 +75,8 @@ def run(beer_id, name, brewer, style=None, year=None):
                 tools=tools,
                 messages=messages,
             )
+
+            print(f'[research] stop_reason={response.stop_reason}, content types={[b.type for b in response.content]}')
 
             if response.stop_reason == "end_turn":
                 break
@@ -87,15 +93,19 @@ def run(beer_id, name, brewer, style=None, year=None):
 
             break  # unexpected stop reason; use whatever we have
 
-    except Exception:
+    except Exception as e:
+        print(f'[research] API error: {type(e).__name__}: {e}')
         return
 
     if not response:
+        print(f'[research] No response received')
         return
 
     # Find the final text block and parse the JSON out of it
     text = next((b.text for b in response.content if b.type == "text"), None)
+    print(f'[research] Raw text response: {text!r}')
     if not text:
+        print(f'[research] No text block in response')
         return
 
     try:
@@ -103,13 +113,18 @@ def run(beer_id, name, brewer, style=None, year=None):
         start = text.find("{")
         end = text.rfind("}") + 1
         if start < 0 or end <= start:
+            print(f'[research] No JSON object found in response')
             return
         data = json.loads(text[start:end])
+        print(f'[research] Parsed: drink_after={data.get("drink_after")}, drink_by={data.get("drink_by")}')
         db.update_beer_research(
             beer_id,
             drink_after=data.get("drink_after") or None,
             drink_by=data.get("drink_by") or None,
             research=data.get("research") or None,
         )
-    except (json.JSONDecodeError, Exception):
-        pass
+        print(f'[research] DB updated for beer {beer_id}')
+    except json.JSONDecodeError as e:
+        print(f'[research] JSON parse error: {e}')
+    except Exception as e:
+        print(f'[research] Unexpected error: {type(e).__name__}: {e}')

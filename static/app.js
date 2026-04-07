@@ -367,6 +367,13 @@ function renderModal(beer) {
       </div>`;
   }
 
+  if (!window.READ_ONLY) {
+    html += `
+      <div class="modal-delete-row">
+        <button class="btn-delete-beer" id="deleteBeerBtn" data-id="${beer.id}">Delete</button>
+      </div>`;
+  }
+
   return html;
 }
 
@@ -382,6 +389,7 @@ function openModal(beerId) {
       document.getElementById('modalContent').innerHTML = renderModal(beer);
       document.getElementById('modal').removeAttribute('hidden');
       setupImbibeButton(beer.id);
+      setupDeleteButton(beer.id);
     });
 }
 
@@ -425,6 +433,23 @@ function setupImbibeButton(beerId) {
         syncCards();
         // Refresh modal content to show imbibed state
         document.getElementById('modalContent').innerHTML = renderModal(beer);
+      });
+  });
+}
+
+function setupDeleteButton(beerId) {
+  const btn = document.getElementById('deleteBeerBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!confirm('Delete this beer from the cellar?')) return;
+    fetch(`/api/beers/${beerId}`, { method: 'DELETE' })
+      .then(r => {
+        if (!r.ok) return;
+        closeModal();
+        const row = document.querySelector(`tr.beer-row[data-id="${beerId}"]`);
+        if (row) row.remove();
+        const card = document.querySelector(`.beer-card[data-id="${beerId}"]`);
+        if (card) card.remove();
       });
   });
 }

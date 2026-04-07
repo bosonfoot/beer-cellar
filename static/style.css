@@ -381,6 +381,25 @@ tr[data-imbibed] td { opacity: 0.5; }
 }
 .btn-imbibe-cancel:hover { color: var(--text); }
 
+.modal-delete-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.btn-delete-beer {
+  background: transparent;
+  color: #e05252;
+  border: 1px solid #e05252;
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.btn-delete-beer:hover { opacity: 1; }
+
 /* ── Responsive table ────────────────────── */
 
 /* Tablet (~768px): hide ABV, Rating, and Drink After */
