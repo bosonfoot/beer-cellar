@@ -152,6 +152,7 @@ def api_add_beer():
 
 @app.route('/api/beers/<int:beer_id>/imbibe', methods=['POST'])
 def api_imbibe_beer(beer_id):
+    check_auth()
     beer = db.get_beer(beer_id)
     if not beer:
         abort(404)

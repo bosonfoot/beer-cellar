@@ -103,7 +103,9 @@ def run_all(base_url, verbose=False):
 
     @test('Auth: login with correct password returns 200')
     def _():
-        r = anon.post(f'{base_url}/api/auth', json={'password': PASSWORD})
+        # Use a throwaway session so anon stays unauthenticated for later tests
+        tmp = requests.Session()
+        r = tmp.post(f'{base_url}/api/auth', json={'password': PASSWORD})
         assert_eq('status', r.status_code, 200)
         assert_in('ok', 'ok', r.json())
 
