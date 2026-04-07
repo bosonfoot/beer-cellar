@@ -18,6 +18,7 @@ and needs to be resumed) but in practice most beer research finishes in one roun
 
 import json
 import os
+import re
 
 import anthropic
 import db
@@ -120,11 +121,15 @@ def run(beer_id, name, brewer, style=None, year=None):
             return
         data = json.loads(text[start:end])
         print(f'[research] Parsed: drink_after={data.get("drink_after")}, drink_by={data.get("drink_by")}')
+        # Strip <cite ...>...</cite> tags that leak in from web search results
+        research_text = data.get("research") or None
+        if research_text:
+            research_text = re.sub(r'<cite[^>]*>(.*?)</cite>', r'\1', research_text, flags=re.DOTALL).strip()
         db.update_beer_research(
             beer_id,
             drink_after=data.get("drink_after") or None,
             drink_by=data.get("drink_by") or None,
-            research=data.get("research") or None,
+            research=research_text or None,
         )
         print(f'[research] DB updated for beer {beer_id}')
     except json.JSONDecodeError as e:
