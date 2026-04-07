@@ -630,14 +630,14 @@ document.getElementById('tableBody').classList.add('ready');
 
   const state = { step: 0, results: [], selected: null };
 
-  function openModal() {
+  function openAddBeer() {
     overlay.removeAttribute('hidden');
     fetch('/api/auth')
       .then(r => { if (r.ok) return renderStep1(); else renderStep0(); })
       .catch(() => renderStep0());
   }
 
-  function closeModal() {
+  function closeAddBeer() {
     overlay.setAttribute('hidden', '');
     state.results = [];
     state.selected = null;
@@ -933,7 +933,7 @@ document.getElementById('tableBody').classList.add('ready');
         <div class="research-status" id="researchStatus">Researching drink window…</div>
         <button class="btn-primary" id="addBeerDoneBtn" style="margin-top:1rem">Done</button>
       </div>`;
-    document.getElementById('addBeerDoneBtn').addEventListener('click', closeModal);
+    document.getElementById('addBeerDoneBtn').addEventListener('click', closeAddBeer);
 
     // Poll for drink window research results (written by background agent)
     let attempts = 0;
@@ -1037,10 +1037,10 @@ document.getElementById('tableBody').classList.add('ready');
 
   // ── Event wiring ─────────────────────────────────────────────────────────
 
-  document.getElementById('addBeerBtn').addEventListener('click', openModal);
-  document.getElementById('addBeerClose').addEventListener('click', closeModal);
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.getElementById('addBeerBtn').addEventListener('click', openAddBeer);
+  document.getElementById('addBeerClose').addEventListener('click', closeAddBeer);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAddBeer(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeModal();
+    if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeAddBeer();
   });
 })();
