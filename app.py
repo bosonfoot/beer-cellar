@@ -68,6 +68,19 @@ def check_auth():
         abort(403)
 
 
+def _delete_background(name, brewer):
+    if not _publish_lock.acquire(blocking=False):
+        return
+    try:
+        subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
+        subprocess.run(['git', 'add', '-A'], cwd=REPO)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m',
+                        f'Remove {name} ({brewer})'], cwd=REPO)
+        subprocess.run(['git', 'push'], cwd=REPO)
+    finally:
+        _publish_lock.release()
+
+
 def _publish_background(beer_id, data):
     if not _publish_lock.acquire(blocking=False):
         return
@@ -154,6 +167,8 @@ def api_delete_beer(beer_id):
     if not beer:
         abort(404)
     db.delete_beer(beer_id)
+    t = threading.Thread(target=_delete_background, args=(beer['name'], beer['brewer']), daemon=True)
+    t.start()
     return '', 204
 
 
