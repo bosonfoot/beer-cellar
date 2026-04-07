@@ -1,11 +1,25 @@
 import os
 import re
-from flask import Flask, render_template, jsonify, request, abort
+import subprocess
+import sys
+import threading
+from datetime import timedelta
+
+from dotenv import load_dotenv
+from flask import Flask, render_template, jsonify, request, abort, session
+
 import db
 
+load_dotenv()
+
 app = Flask(__name__)
+app.secret_key = os.environ.get('CELLAR_SECRET_KEY', 'dev-insecure-key')
+app.permanent_session_lifetime = timedelta(days=30)
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
+REPO = os.path.dirname(__file__)
+
+_publish_lock = threading.Lock()
 
 
 def brewer_slug(name):
@@ -49,10 +63,28 @@ def enrich(beer):
     return beer
 
 
+def check_auth():
+    if not session.get('authed'):
+        abort(403)
+
+
+def _publish_background(name, brewer):
+    if not _publish_lock.acquire(blocking=False):
+        return
+    try:
+        subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
+        subprocess.run(['git', 'add', '-A'], cwd=REPO)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m', f'Add {name} ({brewer})'], cwd=REPO)
+        subprocess.run(['git', 'push'], cwd=REPO)
+    finally:
+        _publish_lock.release()
+
+
 @app.route('/')
 def index():
     beers = [enrich(b) for b in db.get_all_beers()]
-    return render_template('index.html', beers=beers)
+    brewers = sorted({b['brewer'] for b in beers})
+    return render_template('index.html', beers=beers, brewers=brewers)
 
 
 @app.route('/api/beers')
@@ -70,13 +102,16 @@ def api_beer(beer_id):
 
 @app.route('/api/beers', methods=['POST'])
 def api_add_beer():
+    check_auth()
     data = request.get_json()
     if not data or not data.get('name') or not data.get('brewer'):
         abort(400)
     beer_id = db.insert_beer(
         name=data['name'],
         brewer=data['brewer'],
+        year=data.get('year'),
         abv=data.get('abv'),
+        quantity=data.get('quantity', 1),
         date_bottled=data.get('date_bottled'),
         drink_after=data.get('drink_after'),
         drink_by=data.get('drink_by'),
@@ -84,8 +119,13 @@ def api_add_beer():
         food_pairings=data.get('food_pairings'),
         considerations=data.get('considerations'),
         image_url=data.get('image_url'),
+        untappd_rating=data.get('untappd_rating'),
+        label=data.get('label'),
     )
-    return jsonify({'id': beer_id}), 201
+    beer = enrich(db.get_beer(beer_id))
+    t = threading.Thread(target=_publish_background, args=(data['name'], data['brewer']), daemon=True)
+    t.start()
+    return jsonify(beer), 201
 
 
 @app.route('/api/beers/<int:beer_id>/imbibe', methods=['POST'])
@@ -100,11 +140,65 @@ def api_imbibe_beer(beer_id):
 
 @app.route('/api/beers/<int:beer_id>', methods=['DELETE'])
 def api_delete_beer(beer_id):
+    check_auth()
     beer = db.get_beer(beer_id)
     if not beer:
         abort(404)
     db.delete_beer(beer_id)
     return '', 204
+
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+@app.route('/api/auth', methods=['GET'])
+def api_auth_check():
+    if session.get('authed'):
+        return jsonify({'authed': True})
+    abort(403)
+
+
+@app.route('/api/auth', methods=['POST'])
+def api_auth_login():
+    data = request.get_json() or {}
+    password = os.environ.get('CELLAR_PASSWORD', '')
+    if not password or data.get('password') != password:
+        abort(403)
+    session.permanent = True
+    session['authed'] = True
+    return jsonify({'ok': True})
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'ok': True})
+
+
+# ── Untappd lookup ────────────────────────────────────────────────────────────
+
+@app.route('/api/lookup')
+def api_lookup():
+    check_auth()
+    q = request.args.get('q', '').strip()
+    brewery = request.args.get('brewery', '').strip()
+    if not q:
+        return jsonify([])
+    import untappd_client
+    results = untappd_client.search_beers(q, brewery)
+    return jsonify(results)
+
+
+@app.route('/api/lookup/<int:untappd_id>')
+def api_lookup_beer(untappd_id):
+    check_auth()
+    slug = request.args.get('slug', '')
+    if not slug:
+        abort(400)
+    import untappd_client
+    beer = untappd_client.get_beer(untappd_id, slug)
+    if not beer:
+        abort(404)
+    return jsonify(beer)
 
 
 if __name__ == '__main__':

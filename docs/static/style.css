@@ -531,3 +531,267 @@ span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82
   .card-grid { grid-template-columns: 1fr; }
   .card-thumb { width: 60px; height: 60px; }
 }
+
+/* ── Add Beer ────────────────────────────── */
+.btn-add-beer {
+  background: var(--accent);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-add-beer:hover { filter: brightness(1.15); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* Add Beer modal overlay — sits above the detail modal */
+#addBeerModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+#addBeerModal[hidden] { display: none; }
+
+.add-beer-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: min(500px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.add-beer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.add-beer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.add-beer-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+.add-beer-close:hover { color: var(--text); }
+
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1.5rem;
+}
+.step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.step-dot.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.step-dot.done {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+}
+
+/* Form fields */
+.add-beer-form {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 0.6rem 0.75rem;
+  align-items: center;
+}
+.add-beer-form label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+.add-field {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  width: 100%;
+  outline: none;
+}
+.add-field:focus { border-color: var(--accent); }
+.add-field[readonly] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.date-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.date-row .add-field { width: auto; flex: 1; }
+
+/* Result list */
+.lookup-results {
+  max-height: 340px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.lookup-result {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.lookup-result:last-child { border-bottom: none; }
+.lookup-result:hover { background: var(--surface2); }
+.lookup-result-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--surface2);
+}
+.lookup-result-info { flex: 1; min-width: 0; }
+.lookup-result-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lookup-result-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Image preview in step 3 */
+.add-beer-img-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--surface2);
+  grid-column: 2;
+}
+
+/* Success state */
+.add-beer-success {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.add-beer-success-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+.add-beer-success-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+.add-beer-success-brewer {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Auth step */
+.add-beer-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.add-beer-auth label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.add-beer-error {
+  font-size: 0.8rem;
+  color: var(--red-text);
+  margin-top: 0.25rem;
+}
+
+/* Loading spinner inline */
+.add-beer-loading {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+  font-size: 0.875rem;
+}
+
+.add-beer-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  justify-content: flex-end;
+}
+
+.badge-test { background: #3a2a5c; color: #c9b3f7; }

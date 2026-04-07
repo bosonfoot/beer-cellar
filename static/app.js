@@ -4,7 +4,8 @@ const DATA_URL = window.CELLAR_DATA_URL || '/api/beers';
 
 // ── Status & Days Left logic ──────────────────────────────────────────────────
 
-function getStatus(drinkAfter, drinkBy, imbibed) {
+function getStatus(drinkAfter, drinkBy, imbibed, label) {
+  if (label) return label;
   if (imbibed) return 'Happily Imbibed';
   const today = new Date().toISOString().slice(0, 10);
   if (!drinkAfter && !drinkBy) return 'Unknown';
@@ -40,11 +41,12 @@ const STATUS_CLASS = {
   'Past Peak':        'badge-past-peak',
   'Unknown':          'badge-unknown',
   'Happily Imbibed':  'badge-imbibed',
+  'Test':             'badge-test',
 };
 
 function applyBadges() {
   document.querySelectorAll('.badge[data-after]').forEach(el => {
-    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed);
+    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
     el.textContent = status;
     el.className = 'badge ' + (STATUS_CLASS[status] || 'badge-unknown');
   });
@@ -55,7 +57,7 @@ function applyBadges() {
 
   function applyDaysEl(el, isCell) {
     DAY_CLASSES.forEach(c => el.classList.remove(c));
-    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed);
+    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
     if (status === 'Drink Now') {
       const d = daysLeft(el.dataset.by);
       if (d !== null) {
@@ -132,6 +134,7 @@ const STATUS_SORT_RANK = {
   'Unknown':          3,
   'Past Peak':        4,
   'Happily Imbibed':  5,
+  'Test':             6,
 };
 
 function cellValue(row, col) {
@@ -257,7 +260,7 @@ function autoLink(text) {
 }
 
 function renderModal(beer) {
-  const status = getStatus(beer.drink_after, beer.drink_by, beer.date_imbibed);
+  const status = getStatus(beer.drink_after, beer.drink_by, beer.date_imbibed, beer.label);
   const badgeClass = STATUS_CLASS[status] || 'badge-unknown';
   const imgSrc = beer.image_path || '/static/images/default.svg';
 
@@ -578,3 +581,390 @@ updateSortIndicators();
 sortTable();
 setView(getPreferredView());
 document.getElementById('tableBody').classList.add('ready');
+
+// ── Add Beer modal ────────────────────────────────────────────────────────────
+
+(function () {
+  if (!document.getElementById('addBeerBtn')) return; // read-only / static site
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Inject modal DOM once
+  const overlay = document.createElement('div');
+  overlay.id = 'addBeerModal';
+  overlay.setAttribute('hidden', '');
+  overlay.innerHTML = `
+    <div class="add-beer-box">
+      <div class="add-beer-header">
+        <span class="add-beer-title">Add Beer</span>
+        <button class="add-beer-close" id="addBeerClose">✕</button>
+      </div>
+      <div id="addBeerBody"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const state = { step: 0, results: [], selected: null };
+
+  function openModal() {
+    overlay.removeAttribute('hidden');
+    fetch('/api/auth')
+      .then(r => { if (r.ok) return renderStep1(); else renderStep0(); })
+      .catch(() => renderStep0());
+  }
+
+  function closeModal() {
+    overlay.setAttribute('hidden', '');
+    state.results = [];
+    state.selected = null;
+  }
+
+  function body() { return document.getElementById('addBeerBody'); }
+
+  // ── Step indicator ────────────────────────────────────────────────────────
+
+  function stepIndicator(current) {
+    // Steps 1-4 (auth step 0 has no indicator)
+    const labels = ['Search', 'Results', 'Confirm', 'Done'];
+    let html = '<div class="step-indicator">';
+    for (let i = 0; i < 4; i++) {
+      const idx = i + 1;
+      let cls = idx < current ? 'done' : idx === current ? 'active' : '';
+      html += `<div class="step-dot ${cls}">${idx < current ? '✓' : idx}</div>`;
+      if (i < 3) html += '<div class="step-line"></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // ── Step 0: Auth ──────────────────────────────────────────────────────────
+
+  function renderStep0(errorMsg) {
+    body().innerHTML = `
+      <div class="add-beer-auth">
+        <label>Enter cellar password</label>
+        <input class="add-field" type="password" id="authPwInput" placeholder="Password" autocomplete="current-password">
+        ${errorMsg ? `<div class="add-beer-error">${esc(errorMsg)}</div>` : ''}
+        <div class="add-beer-actions">
+          <button class="btn-primary" id="authSubmitBtn">Unlock</button>
+        </div>
+      </div>`;
+    const input = document.getElementById('authPwInput');
+    const btn = document.getElementById('authSubmitBtn');
+    input.focus();
+    function doAuth() {
+      btn.disabled = true;
+      fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: input.value }),
+      }).then(r => {
+        if (r.ok) {
+          renderStep1();
+        } else {
+          renderStep0('Wrong password.');
+        }
+      }).catch(() => renderStep0('Network error.'));
+    }
+    btn.addEventListener('click', doAuth);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+  }
+
+  // ── Step 1: Search ────────────────────────────────────────────────────────
+
+  function renderStep1() {
+    const brewerList = (window.CELLAR_BREWERS || [])
+      .map(b => `<option value="${esc(b)}">`)
+      .join('');
+    body().innerHTML = `
+      ${stepIndicator(1)}
+      <datalist id="brewerListData">${brewerList}</datalist>
+      <div class="add-beer-form">
+        <label>Beer name</label>
+        <input class="add-field" id="lookupName" type="text" placeholder="e.g. Oude Geuze" autocomplete="off">
+        <label>Brewery</label>
+        <input class="add-field" id="lookupBrewery" type="text" placeholder="Optional" list="brewerListData" autocomplete="off">
+      </div>
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="addManuallyBtn">Add Manually</button>
+        <button class="btn-primary" id="doLookupBtn">Look Up</button>
+      </div>`;
+    document.getElementById('lookupName').focus();
+    document.getElementById('doLookupBtn').addEventListener('click', doLookup);
+    document.getElementById('addManuallyBtn').addEventListener('click', () => {
+      state.selected = null;
+      renderStep3({});
+    });
+    document.getElementById('lookupName').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLookup();
+    });
+  }
+
+  // ── Step 2: Results ───────────────────────────────────────────────────────
+
+  function doLookup() {
+    const q = document.getElementById('lookupName').value.trim();
+    const brewery = document.getElementById('lookupBrewery').value.trim();
+    if (!q) return;
+    body().innerHTML = '<div class="add-beer-loading">Searching Untappd…</div>';
+    const url = '/api/lookup?q=' + encodeURIComponent(q) + (brewery ? '&brewery=' + encodeURIComponent(brewery) : '');
+    fetch(url)
+      .then(r => {
+        if (r.status === 403) { renderStep0(); return null; }
+        return r.json();
+      })
+      .then(results => {
+        if (!results) return;
+        state.results = results;
+        renderStep2();
+      })
+      .catch(() => {
+        body().innerHTML = '<div class="add-beer-loading">Search failed. Try again.</div>';
+      });
+  }
+
+  function renderStep2() {
+    const results = state.results;
+    let listHtml = '';
+    if (results.length === 0) {
+      listHtml = '<div class="add-beer-loading">No results found.</div>';
+    } else {
+      listHtml = '<div class="lookup-results">';
+      results.forEach((r, i) => {
+        const meta = [r.brewer, r.style, r.abv ? r.abv.toFixed(1) + '% ABV' : null].filter(Boolean).join(' · ');
+        const thumb = r.label_url
+          ? `<img class="lookup-result-thumb" src="${esc(r.label_url)}" alt="" onerror="this.style.visibility='hidden'">`
+          : `<div class="lookup-result-thumb"></div>`;
+        listHtml += `
+          <div class="lookup-result" data-idx="${i}">
+            ${thumb}
+            <div class="lookup-result-info">
+              <div class="lookup-result-name">${esc(r.name || '—')}</div>
+              <div class="lookup-result-meta">${esc(meta)}</div>
+            </div>
+          </div>`;
+      });
+      listHtml += '</div>';
+    }
+    body().innerHTML = `
+      ${stepIndicator(2)}
+      ${listHtml}
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="backToStep1Btn">← Back</button>
+        <button class="btn-secondary" id="noneOfTheseBtn">None of these</button>
+      </div>`;
+    document.querySelectorAll('.lookup-result').forEach(el => {
+      el.addEventListener('click', () => selectResult(parseInt(el.dataset.idx, 10)));
+    });
+    document.getElementById('backToStep1Btn').addEventListener('click', renderStep1);
+    document.getElementById('noneOfTheseBtn').addEventListener('click', () => renderStep3({}));
+  }
+
+  function selectResult(idx) {
+    const r = state.results[idx];
+    body().innerHTML = '<div class="add-beer-loading">Loading beer details…</div>';
+    fetch(`/api/lookup/${r.untappd_id}?slug=${encodeURIComponent(r.slug)}`)
+      .then(res => {
+        if (res.status === 403) { renderStep0(); return null; }
+        if (!res.ok) return r; // fallback to search result data
+        return res.json();
+      })
+      .then(beer => {
+        if (!beer) return;
+        state.selected = beer;
+        renderStep3(beer);
+      });
+  }
+
+  // ── Step 3: Confirm form ──────────────────────────────────────────────────
+
+  function renderStep3(beer) {
+    const brewerList = (window.CELLAR_BREWERS || [])
+      .map(b => `<option value="${esc(b)}">`)
+      .join('');
+    const imgPreview = (beer.image_url || beer.label_url)
+      ? `<img class="add-beer-img-preview" src="${esc(beer.image_url || beer.label_url)}" alt="" onerror="this.style.display='none'">`
+      : '';
+    body().innerHTML = `
+      ${stepIndicator(3)}
+      <datalist id="brewerListData3">${brewerList}</datalist>
+      <div class="add-beer-form">
+        ${imgPreview ? `<label></label>${imgPreview}` : ''}
+        <label>Beer name *</label>
+        <input class="add-field" id="f-name" type="text" value="${esc(beer.name || '')}" required>
+        <label>Brewery *</label>
+        <input class="add-field" id="f-brewer" type="text" value="${esc(beer.brewer || '')}" list="brewerListData3" required>
+        <label>Bottled</label>
+        <div class="date-row">
+          <input class="add-field" id="f-bottled-y" type="number" placeholder="YYYY" min="1900" max="2100" style="width:70px">
+          <select class="add-field" id="f-bottled-m">
+            <option value="">—</option>
+            ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('')}
+          </select>
+          <input class="add-field" id="f-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px" disabled>
+        </div>
+        <label>ABV</label>
+        <input class="add-field" id="f-abv" type="number" step="0.1" min="0" max="100" value="${beer.abv != null ? beer.abv : ''}">
+        <label>Year</label>
+        <input class="add-field" id="f-year" type="number" min="1900" max="2100" value="${beer.year != null ? beer.year : (beer.name ? (beer.name.match(/\b(19|20)\d{2}\b/) || [])[0] || '' : '')}">
+        <label>Quantity</label>
+        <input class="add-field" id="f-qty" type="number" min="1" value="1">
+        <label>Rating</label>
+        <input class="add-field" id="f-rating" type="number" step="0.01" min="0" max="5" value="${beer.rating != null ? beer.rating : ''}">
+        <label>Notes</label>
+        <textarea class="add-field" id="f-considerations" rows="3" placeholder="Optional…">${esc(beer.description || '')}</textarea>
+        <label>Label</label>
+        <input class="add-field" id="f-label" type="text" placeholder="e.g. Test" value="">
+      </div>
+      <div class="add-beer-error" id="submitError" hidden></div>
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="backToStep2Btn">${state.results.length ? '← Back' : '← Back'}</button>
+        <button class="btn-primary" id="submitBeerBtn">Add to Cellar</button>
+      </div>`;
+
+    // Enable day input only when month is chosen
+    document.getElementById('f-bottled-m').addEventListener('change', function () {
+      document.getElementById('f-bottled-d').disabled = !this.value;
+      if (!this.value) document.getElementById('f-bottled-d').value = '';
+    });
+
+    document.getElementById('backToStep2Btn').addEventListener('click', () => {
+      if (state.results.length) renderStep2(); else renderStep1();
+    });
+    document.getElementById('submitBeerBtn').addEventListener('click', doSubmit);
+  }
+
+  // ── Step 3 → submit ───────────────────────────────────────────────────────
+
+  function doSubmit() {
+    const name = document.getElementById('f-name').value.trim();
+    const brewer = document.getElementById('f-brewer').value.trim();
+    const errEl = document.getElementById('submitError');
+    if (!name || !brewer) {
+      errEl.textContent = 'Beer name and brewery are required.';
+      errEl.removeAttribute('hidden');
+      return;
+    }
+    errEl.setAttribute('hidden', '');
+
+    const abv = document.getElementById('f-abv').value;
+    const year = document.getElementById('f-year').value;
+    const qty = document.getElementById('f-qty').value;
+    const rating = document.getElementById('f-rating').value;
+    const considerations = document.getElementById('f-considerations').value.trim();
+    const label = document.getElementById('f-label').value.trim();
+    const by = document.getElementById('f-bottled-y').value.trim();
+    const bm = document.getElementById('f-bottled-m').value;
+    const bd = document.getElementById('f-bottled-d').value.trim();
+
+    let date_bottled = null;
+    if (by) {
+      date_bottled = by;
+      if (bm) {
+        date_bottled = `${by}-${bm}`;
+        if (bd) date_bottled += `-${String(bd).padStart(2, '0')}`;
+      }
+    }
+
+    const payload = {
+      name,
+      brewer,
+      abv: abv ? parseFloat(abv) : null,
+      year: year ? parseInt(year, 10) : null,
+      quantity: qty ? parseInt(qty, 10) : 1,
+      date_bottled,
+      untappd_rating: rating ? parseFloat(rating) : null,
+      considerations: considerations || null,
+      image_url: state.selected ? (state.selected.image_url || null) : null,
+      label: label || null,
+    };
+
+    const btn = document.getElementById('submitBeerBtn');
+    btn.disabled = true;
+    fetch('/api/beers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => {
+      if (r.status === 403) { renderStep0(); return null; }
+      if (!r.ok) { btn.disabled = false; errEl.textContent = 'Server error. Try again.'; errEl.removeAttribute('hidden'); return null; }
+      return r.json();
+    }).then(beer => {
+      if (!beer) return;
+      renderStep4(beer);
+      injectNewBeerRow(beer);
+    });
+  }
+
+  // ── Step 4: Done ──────────────────────────────────────────────────────────
+
+  function renderStep4(beer) {
+    body().innerHTML = `
+      ${stepIndicator(4)}
+      <div class="add-beer-success">
+        <div class="add-beer-success-icon">🍺</div>
+        <div class="add-beer-success-name">${esc(beer.name)}</div>
+        <div class="add-beer-success-brewer">${esc(beer.brewer)}</div>
+        <button class="btn-primary" id="addBeerDoneBtn">Done</button>
+      </div>`;
+    document.getElementById('addBeerDoneBtn').addEventListener('click', closeModal);
+  }
+
+  // ── Inject new row into the live table ───────────────────────────────────
+
+  function injectNewBeerRow(beer) {
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    const imgSrc = beer.image_path || '/static/images/default.svg';
+    const abvText = beer.abv != null ? beer.abv.toFixed(1) + '%' : '—';
+    const ratingText = beer.untappd_rating != null ? beer.untappd_rating.toFixed(2) : '—';
+    const yearText = beer.year || '—';
+    const qtyHtml = beer.quantity > 1 ? ` <span class="qty-badge">×${beer.quantity}</span>` : '';
+
+    const tr = document.createElement('tr');
+    tr.className = 'beer-row';
+    tr.dataset.id = beer.id;
+    tr.innerHTML = `
+      <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(beer.name)}" onerror="this.src='/static/images/default.svg'"></td>
+      <td class="beer-name">${esc(beer.name)}${qtyHtml}</td>
+      <td class="col-year">${yearText}</td>
+      <td class="col-brewer">${esc(shortBrewer(beer.brewer))}</td>
+      <td class="col-abv">${abvText}</td>
+      <td class="col-rating">${ratingText}</td>
+      <td class="col-drink-after">${beer.drink_after || '—'}</td>
+      <td class="col-drink-by">${beer.drink_by || '—'}</td>
+      <td class="col-days-left"
+          data-by="${beer.drink_by || ''}"
+          data-after="${beer.drink_after || ''}"
+          data-imbibed="${beer.date_imbibed || ''}"
+          data-label="${beer.label || ''}">—</td>
+      <td><span class="badge"
+                data-after="${beer.drink_after || ''}"
+                data-by="${beer.drink_by || ''}"
+                data-imbibed="${beer.date_imbibed || ''}"
+                data-label="${beer.label || ''}"></span></td>`;
+
+    document.getElementById('tableBody').appendChild(tr);
+    tr.addEventListener('click', () => openModal(beer.id));
+
+    applyBadges();
+    sortTable();
+    syncCards();
+    applyFilters();
+
+    // Update brewer autocomplete list
+    if (window.CELLAR_BREWERS && !window.CELLAR_BREWERS.includes(beer.brewer)) {
+      window.CELLAR_BREWERS.push(beer.brewer);
+      window.CELLAR_BREWERS.sort();
+    }
+  }
+
+  // ── Event wiring ─────────────────────────────────────────────────────────
+
+  document.getElementById('addBeerBtn').addEventListener('click', openModal);
+  document.getElementById('addBeerClose').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeModal();
+  });
+})();

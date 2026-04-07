@@ -70,7 +70,7 @@ def export():
     env.filters['short_brewer'] = short_brewer
 
     tmpl = env.get_template('index.html')
-    rendered = tmpl.render(beers=beers)
+    rendered = tmpl.render(beers=beers, read_only=True)
 
     # Patch data URL → cellar.json, and inject READ_ONLY flag
     rendered = rendered.replace(

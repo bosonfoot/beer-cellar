@@ -41,6 +41,7 @@ def init_db():
             ('year',            'ALTER TABLE beers ADD COLUMN year INTEGER'),
             ('untappd_rating',  'ALTER TABLE beers ADD COLUMN untappd_rating REAL'),
             ('imbibe_notes',    'ALTER TABLE beers ADD COLUMN imbibe_notes TEXT'),
+            ('label',           'ALTER TABLE beers ADD COLUMN label TEXT'),
         ]
         for col, sql in migrations:
             if col not in cols:
@@ -67,14 +68,14 @@ def get_beer(beer_id):
 
 def insert_beer(name, brewer, year=None, abv=None, quantity=1, date_bottled=None, drink_after=None,
                 drink_by=None, research=None, food_pairings=None, considerations=None,
-                image_url=None, untappd_rating=None):
+                image_url=None, untappd_rating=None, label=None):
     with get_conn() as conn:
         cursor = conn.execute('''
             INSERT INTO beers (name, year, brewer, abv, quantity, date_bottled, drink_after, drink_by,
-                               research, food_pairings, considerations, image_url, untappd_rating)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               research, food_pairings, considerations, image_url, untappd_rating, label)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (name, year, brewer, abv, quantity, date_bottled, drink_after, drink_by,
-              research, food_pairings, considerations, image_url, untappd_rating))
+              research, food_pairings, considerations, image_url, untappd_rating, label))
         return cursor.lastrowid
 
 

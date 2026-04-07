@@ -74,7 +74,14 @@
       "Bash(where python:*)",
       "Bash(where python3:*)",
       "Bash(where node:*)",
-      "Bash(where py:*)"
+      "Bash(where py:*)",
+      "Bash(python -c \"from dotenv import load_dotenv; from flask import Flask, session; import untappd_client; print\\('imports OK'\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python3 -c ':*)",
+      "Bash(python -c \"import json; beers=json.load\\(open\\('docs/cellar.json'\\)\\); [print\\(f'{b[\\\\\"id\\\\\"]}: {b[\\\\\"brewer\\\\\"]} - {b[\\\\\"name\\\\\"]} \\({b.get\\(\\\\\"year\\\\\",\\\\\"\\\\\"\\)}\\) qty={b.get\\(\\\\\"quantity\\\\\",1\\)} after={b.get\\(\\\\\"drink_after\\\\\",\\\\\"\\\\\"\\)} by={b.get\\(\\\\\"drink_by\\\\\",\\\\\"\\\\\"\\)} abv={b.get\\(\\\\\"abv\\\\\",\\\\\"\\\\\"\\)} rating={b.get\\(\\\\\"untappd_rating\\\\\",\\\\\"\\\\\"\\)} bottled={b.get\\(\\\\\"date_bottled\\\\\",\\\\\"\\\\\"\\)} imbibed={b.get\\(\\\\\"date_imbibed\\\\\",\\\\\"\\\\\"\\)}'\\) for b in beers]\")",
+      "Bash(curl -s --max-time 15 \"https://www.floodlandbrewing.com/bottlelog/\")",
+      "Bash(sed 's/<[^>]*>//g')",
+      "Bash(python -c \"import db; db.init_db\\(\\); print\\('DB migrated OK'\\)\")"
     ]
   }
 }

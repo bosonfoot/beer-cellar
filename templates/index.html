@@ -17,6 +17,9 @@
 
 <main>
   <div class="controls">
+    {% if not read_only %}
+    <button id="addBeerBtn" class="btn-add-beer">+ Add Beer</button>
+    {% endif %}
     <input type="text" id="filterText" placeholder="Search by name or brewer…" autocomplete="off">
     <select id="filterStatus">
       <option value="">All statuses</option>
@@ -26,6 +29,7 @@
       <option value="Past Peak">Past Peak</option>
       <option value="Unknown">Unknown</option>
       <option value="Happily Imbibed">Happily Imbibed</option>
+      <option value="Test">Test</option>
     </select>
     <button id="viewToggle" class="view-toggle">
       <span class="view-toggle-icon">⊞</span>
@@ -88,11 +92,13 @@
         <td class="col-days-left"
             data-by="{{ beer.drink_by or '' }}"
             data-after="{{ beer.drink_after or '' }}"
-            data-imbibed="{{ beer.date_imbibed or '' }}">—</td>
+            data-imbibed="{{ beer.date_imbibed or '' }}"
+            data-label="{{ beer.label or '' }}">—</td>
         <td><span class="badge"
                   data-after="{{ beer.drink_after or '' }}"
                   data-by="{{ beer.drink_by or '' }}"
-                  data-imbibed="{{ beer.date_imbibed or '' }}"></span></td>
+                  data-imbibed="{{ beer.date_imbibed or '' }}"
+                  data-label="{{ beer.label or '' }}"></span></td>
       </tr>
       {% else %}
       <tr id="emptyRow"><td colspan="9">No beers in the cellar yet.</td></tr>
@@ -112,6 +118,9 @@
   </div>
 </div>
 
+{% if not read_only %}
+<script>window.CELLAR_BREWERS = {{ brewers | tojson }};</script>
+{% endif %}
 <script>
   window.CELLAR_DATA_URL = window.CELLAR_DATA_URL || '/api/beers';
 </script>
