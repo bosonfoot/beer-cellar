@@ -42,27 +42,6 @@
     "image_path": "static/images/beers/beer_16.jpeg"
   },
   {
-    "id": 41,
-    "name": "Brasserie Cantillon Gueuze Loerik (2019)",
-    "brewer": "Brasserie Cantillon",
-    "date_bottled": "2019",
-    "drink_after": "2023-01",
-    "drink_by": null,
-    "research": "Gueuze Loerik requires years of rest due to slow fermentation, with the 2019 vintage bottled in October 2019. Reviews show the 2019 bottling drinking well as of late 2024-early 2026, suggesting it reached drinkability around 4-5 years post-bottling (early 2023). Cantillon gueuze has taste evolution that will keep for a long time in a good cellar, but no specific upper limit was found for the Loerik variant.",
-    "food_pairings": null,
-    "considerations": "Cantillon Loerik, or 'Lazy Boy' is a blend of one, two and three year-old lambics that creates a second fermentation in the bottle. Loerik, however, takes its sweet time... for some unknown reason, it just doesn't referment like a regular Cantillon Gueuze. But with time, the yeasts gather themselves, and the beer re-ferments, and the result is an exceptionally complex and extremely rare beer. \n\nBottling date : 15 October 2019",
-    "date_added": "2026-04-07",
-    "abv": 5.5,
-    "image_url": "/static/images/beers/beer_4619533.jpeg",
-    "date_imbibed": null,
-    "quantity": 1,
-    "year": 2019,
-    "untappd_rating": 4.17123,
-    "imbibe_notes": null,
-    "label": null,
-    "image_path": "static/images/beers/beer_4619533.jpeg"
-  },
-  {
     "id": 17,
     "name": "Langste Nacht 2019 | Karwijzaad Op Het Koelschip",
     "brewer": "3 Fonteinen",
