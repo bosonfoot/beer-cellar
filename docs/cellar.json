@@ -42,27 +42,6 @@
     "image_path": "static/images/beers/beer_16.jpeg"
   },
   {
-    "id": 40,
-    "name": "Floodland Brewing Filaree (2021)",
-    "brewer": "Floodland Brewing",
-    "date_bottled": null,
-    "drink_after": "2022-02",
-    "drink_by": "2025-01",
-    "research": "Filaree (2021) was bottled 01/20/2022. While Floodland's specific cellar notes for this beer were not found in the bottle log, Floodland specializes in saisons designed to drink young and fresh. Comparable fruit saisons from the brewery suggest a 2-3 year peak window. As of April 2026, this beer is likely past its optimal drinking window.",
-    "food_pairings": null,
-    "considerations": "This beer was created using 2021 harvest 'Santa Rosa' and 'Elephant Heart' plums grown organically in Okanogan, Washington by JC and Amber Kaufmann at Filaree Fruit. The Plums were refermented with barrel aged and fermented spelt saison. This beer is an attempt to showcase the fruit grown by the Kaufmann family at Filaree. Refermented to condition in the bottle with honey from Cougar Canyon Apiary harvested 09/25/21 in Chiliwist.\n\nBottled 01/20/2022",
-    "date_added": "2026-04-07",
-    "abv": 5.71,
-    "image_url": "/static/images/beers/beer_4768451.jpeg",
-    "date_imbibed": null,
-    "quantity": 1,
-    "year": 2021,
-    "untappd_rating": 4.41256,
-    "imbibe_notes": null,
-    "label": null,
-    "image_path": "static/images/beers/beer_4768451.jpeg"
-  },
-  {
     "id": 17,
     "name": "Langste Nacht 2019 | Karwijzaad Op Het Koelschip",
     "brewer": "3 Fonteinen",
