@@ -101,9 +101,12 @@ def run(beer_id, name, brewer, style=None, year=None):
         print(f'[research] No response received')
         return
 
-    # Find the final text block and parse the JSON out of it
-    text = next((b.text for b in response.content if b.type == "text"), None)
-    print(f'[research] Raw text response: {text!r}')
+    # Find the final text block — Claude emits an intro text before searching,
+    # so we want the LAST text block which contains the JSON result.
+    text_blocks = [b.text for b in response.content if b.type == "text"]
+    print(f'[research] Text blocks ({len(text_blocks)}): {text_blocks}')
+    text = text_blocks[-1] if text_blocks else None
+    print(f'[research] Using last text block: {text!r}')
     if not text:
         print(f'[research] No text block in response')
         return
