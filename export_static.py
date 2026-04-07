@@ -51,12 +51,10 @@ def export():
     with open(os.path.join(docs_static, 'app.js'), 'w', encoding='utf-8') as f:
         f.write(app_js)
 
-    # 4. Copy images directory
+    # 4. Copy images directory (merge, never delete — rmtree fails on Windows/OneDrive)
     src_img = os.path.join(BASE, 'static', 'images')
     dst_img = os.path.join(docs_static, 'images')
-    if os.path.exists(dst_img):
-        shutil.rmtree(dst_img)
-    shutil.copytree(src_img, dst_img)
+    shutil.copytree(src_img, dst_img, dirs_exist_ok=True)
     print(f"Copied static/images/ to docs/static/images/")
 
     # 5. Render Jinja2 template with enriched beer data

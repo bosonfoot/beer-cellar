@@ -795,3 +795,9 @@ span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82
 }
 
 .badge-test { background: #3a2a5c; color: #c9b3f7; }
+
+.research-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
