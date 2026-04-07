@@ -95,6 +95,18 @@ def update_beer_research(beer_id, drink_after=None, drink_by=None, research=None
         )
 
 
+def update_beer(beer_id, name, brewer, year, abv, quantity, date_bottled,
+                drink_after, drink_by, research, food_pairings, considerations, label):
+    with get_conn() as conn:
+        conn.execute('''
+            UPDATE beers SET name=?, brewer=?, year=?, abv=?, quantity=?,
+                date_bottled=?, drink_after=?, drink_by=?, research=?,
+                food_pairings=?, considerations=?, label=?
+            WHERE id=?
+        ''', (name, brewer, year, abv, quantity, date_bottled,
+              drink_after, drink_by, research, food_pairings, considerations, label, beer_id))
+
+
 def update_image_url(beer_id, image_url):
     with get_conn() as conn:
         conn.execute('UPDATE beers SET image_url = ? WHERE id = ?', (image_url, beer_id))

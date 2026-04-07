@@ -160,6 +160,49 @@ def api_imbibe_beer(beer_id):
     return jsonify(enrich(db.get_beer(beer_id)))
 
 
+@app.route('/api/beers/<int:beer_id>', methods=['PUT'])
+def api_update_beer(beer_id):
+    check_auth()
+    beer = db.get_beer(beer_id)
+    if not beer:
+        abort(404)
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('brewer'):
+        abort(400)
+    db.update_beer(
+        beer_id,
+        name=data['name'],
+        brewer=data['brewer'],
+        year=data.get('year'),
+        abv=data.get('abv'),
+        quantity=data.get('quantity', 1),
+        date_bottled=data.get('date_bottled'),
+        drink_after=data.get('drink_after'),
+        drink_by=data.get('drink_by'),
+        research=data.get('research'),
+        food_pairings=data.get('food_pairings'),
+        considerations=data.get('considerations'),
+        label=data.get('label'),
+    )
+    return jsonify(enrich(db.get_beer(beer_id)))
+
+
+@app.route('/api/beers/<int:beer_id>/research', methods=['POST'])
+def api_research_beer(beer_id):
+    check_auth()
+    beer = db.get_beer(beer_id)
+    if not beer:
+        abort(404)
+    t = threading.Thread(
+        target=_publish_background,
+        args=(beer_id, {'name': beer['name'], 'brewer': beer['brewer'],
+                        'style': None, 'year': beer.get('year')}),
+        daemon=True,
+    )
+    t.start()
+    return jsonify({'ok': True})
+
+
 @app.route('/api/beers/<int:beer_id>', methods=['DELETE'])
 def api_delete_beer(beer_id):
     check_auth()

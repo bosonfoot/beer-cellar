@@ -383,8 +383,50 @@ tr[data-imbibed] td { opacity: 0.5; }
 
 .modal-delete-row {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
   justify-content: flex-end;
   margin-top: 1.5rem;
+}
+
+.btn-modal-edit {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-modal-edit:hover { color: var(--text); border-color: var(--text-muted); }
+
+.btn-modal-reresearch {
+  background: transparent;
+  color: var(--amber, #c8952a);
+  border: 1px solid var(--amber, #c8952a);
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.btn-modal-reresearch:hover { opacity: 1; }
+.btn-modal-reresearch:disabled { opacity: 0.4; cursor: default; }
+
+.edit-beer-form {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: start;
+  margin-bottom: 0.5rem;
+}
+.edit-beer-form label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding-top: 0.45rem;
+  text-align: right;
 }
 
 .btn-delete-beer {

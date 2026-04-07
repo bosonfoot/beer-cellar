@@ -370,6 +370,8 @@ function renderModal(beer) {
   if (!window.READ_ONLY) {
     html += `
       <div class="modal-delete-row">
+        <button class="btn-modal-edit" id="editBeerBtn">Edit</button>
+        <button class="btn-modal-reresearch" id="reresearchBtn">Re-research</button>
         <button class="btn-delete-beer" id="deleteBeerBtn" data-id="${beer.id}">Delete</button>
       </div>`;
   }
@@ -390,6 +392,8 @@ function openModal(beerId) {
       document.getElementById('modal').removeAttribute('hidden');
       setupImbibeButton(beer.id);
       setupDeleteButton(beer.id);
+      setupEditButton(beer);
+      setupReresearchButton(beer);
     });
 }
 
@@ -450,6 +454,135 @@ function setupDeleteButton(beerId) {
         if (row) row.remove();
         const card = document.querySelector(`.beer-card[data-id="${beerId}"]`);
         if (card) card.remove();
+      });
+  });
+}
+
+function setupEditButton(beer) {
+  const btn = document.getElementById('editBeerBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => renderEditForm(beer));
+}
+
+function renderEditForm(beer) {
+  const brewerList = (window.CELLAR_BREWERS || []).map(b => `<option value="${esc(b)}">`).join('');
+  // Parse date_bottled into parts
+  const dp = (beer.date_bottled || '').split('-');
+  const by = dp[0] || '', bm = dp[1] || '', bd = dp[2] || '';
+
+  document.getElementById('modalContent').innerHTML = `
+    <datalist id="editBrewerList">${brewerList}</datalist>
+    <div class="edit-beer-form">
+      <label>Beer name</label>
+      <input class="add-field" id="ef-name" value="${esc(beer.name || '')}">
+      <label>Brewery</label>
+      <input class="add-field" id="ef-brewer" value="${esc(beer.brewer || '')}" list="editBrewerList">
+      <label>Year</label>
+      <input class="add-field" id="ef-year" type="number" min="1900" max="2100" value="${beer.year || ''}">
+      <label>ABV</label>
+      <input class="add-field" id="ef-abv" type="number" step="0.1" min="0" max="100" value="${beer.abv != null ? beer.abv : ''}">
+      <label>Bottled</label>
+      <div class="date-row">
+        <input class="add-field" id="ef-bottled-y" type="number" placeholder="YYYY" style="width:70px" value="${by}">
+        <select class="add-field" id="ef-bottled-m">
+          <option value="">—</option>
+          ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}" ${bm === String(i+1).padStart(2,'0') ? 'selected' : ''}>${m}</option>`).join('')}
+        </select>
+        <input class="add-field" id="ef-bottled-d" type="number" placeholder="DD" style="width:55px" value="${bd}">
+      </div>
+      <label>Quantity</label>
+      <input class="add-field" id="ef-qty" type="number" min="1" value="${beer.quantity || 1}">
+      <label>Drink after</label>
+      <input class="add-field" id="ef-drink-after" placeholder="YYYY-MM" value="${beer.drink_after || ''}">
+      <label>Drink by</label>
+      <input class="add-field" id="ef-drink-by" placeholder="YYYY-MM" value="${beer.drink_by || ''}">
+      <label>Research notes</label>
+      <textarea class="add-field" id="ef-research" rows="4">${esc(beer.research || '')}</textarea>
+      <label>Food pairings</label>
+      <textarea class="add-field" id="ef-food" rows="2">${esc(beer.food_pairings || '')}</textarea>
+      <label>Considerations</label>
+      <textarea class="add-field" id="ef-considerations" rows="2">${esc(beer.considerations || '')}</textarea>
+      <label>Label / status</label>
+      <input class="add-field" id="ef-label" placeholder="e.g. Test" value="${esc(beer.label || '')}">
+    </div>
+    <div id="editError" class="add-beer-error" hidden></div>
+    <div class="modal-delete-row" style="margin-top:1rem">
+      <button class="btn-secondary" id="editCancelBtn">Cancel</button>
+      <button class="btn-primary" id="editSaveBtn">Save</button>
+    </div>`;
+
+  document.getElementById('editCancelBtn').addEventListener('click', () => openModal(beer.id));
+  document.getElementById('editSaveBtn').addEventListener('click', () => {
+    const eby = document.getElementById('ef-bottled-y').value.trim();
+    const ebm = document.getElementById('ef-bottled-m').value;
+    const ebd = document.getElementById('ef-bottled-d').value.trim();
+    let date_bottled = null;
+    if (eby) {
+      date_bottled = eby;
+      if (ebm) { date_bottled += `-${ebm}`; if (ebd) date_bottled += `-${String(ebd).padStart(2,'0')}`; }
+    }
+    const payload = {
+      name:            document.getElementById('ef-name').value.trim(),
+      brewer:          document.getElementById('ef-brewer').value.trim(),
+      year:            parseInt(document.getElementById('ef-year').value) || null,
+      abv:             parseFloat(document.getElementById('ef-abv').value) || null,
+      quantity:        parseInt(document.getElementById('ef-qty').value) || 1,
+      date_bottled,
+      drink_after:     document.getElementById('ef-drink-after').value.trim() || null,
+      drink_by:        document.getElementById('ef-drink-by').value.trim() || null,
+      research:        document.getElementById('ef-research').value.trim() || null,
+      food_pairings:   document.getElementById('ef-food').value.trim() || null,
+      considerations:  document.getElementById('ef-considerations').value.trim() || null,
+      label:           document.getElementById('ef-label').value.trim() || null,
+    };
+    if (!payload.name || !payload.brewer) {
+      const err = document.getElementById('editError');
+      err.textContent = 'Name and brewery are required.';
+      err.removeAttribute('hidden');
+      return;
+    }
+    fetch(`/api/beers/${beer.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(r => r.json())
+      .then(updated => {
+        updateRowFromResearch(updated);
+        openModal(updated.id);
+      });
+  });
+}
+
+function setupReresearchButton(beer) {
+  const btn = document.getElementById('reresearchBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    btn.textContent = 'Researching…';
+    fetch(`/api/beers/${beer.id}/research`, { method: 'POST' })
+      .then(r => r.json())
+      .then(() => {
+        // Poll for results, same pattern as Step 4
+        let attempts = 0;
+        const poll = setInterval(() => {
+          if (++attempts > 30) {
+            clearInterval(poll);
+            btn.disabled = false;
+            btn.textContent = 'Re-research';
+            return;
+          }
+          fetch(`/api/beers/${beer.id}`)
+            .then(r => r.json())
+            .then(updated => {
+              // Consider it done if research text changed or dates appeared
+              if (updated.drink_after || updated.drink_by || updated.research !== beer.research) {
+                clearInterval(poll);
+                updateRowFromResearch(updated);
+                openModal(updated.id);
+              }
+            });
+        }, 3000);
       });
   });
 }
