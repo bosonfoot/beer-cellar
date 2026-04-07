@@ -628,7 +628,7 @@ document.getElementById('tableBody').classList.add('ready');
     </div>`;
   document.body.appendChild(overlay);
 
-  const state = { step: 0, results: [], selected: null };
+  const state = { step: 0, results: [], selected: null, bottledY: '', bottledM: '', bottledD: '' };
 
   function openAddBeer() {
     overlay.removeAttribute('hidden');
@@ -641,6 +641,9 @@ document.getElementById('tableBody').classList.add('ready');
     overlay.setAttribute('hidden', '');
     state.results = [];
     state.selected = null;
+    state.bottledY = '';
+    state.bottledM = '';
+    state.bottledD = '';
   }
 
   function body() { return document.getElementById('addBeerBody'); }
@@ -708,6 +711,15 @@ document.getElementById('tableBody').classList.add('ready');
         <input class="add-field" id="lookupName" type="text" placeholder="e.g. Oude Geuze" autocomplete="off">
         <label>Brewery</label>
         <input class="add-field" id="lookupBrewery" type="text" placeholder="Optional" list="brewerListData" autocomplete="off">
+        <label>Bottled</label>
+        <div class="date-row">
+          <input class="add-field" id="s1-bottled-y" type="number" placeholder="YYYY" min="1900" max="2100" style="width:70px" value="${state.bottledY}">
+          <select class="add-field" id="s1-bottled-m">
+            <option value="">—</option>
+            ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}" ${state.bottledM === String(i+1).padStart(2,'0') ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+          <input class="add-field" id="s1-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px" value="${state.bottledD}">
+        </div>
       </div>
       <div class="add-beer-actions">
         <button class="btn-secondary" id="addManuallyBtn">Add Manually</button>
@@ -716,6 +728,7 @@ document.getElementById('tableBody').classList.add('ready');
     document.getElementById('lookupName').focus();
     document.getElementById('doLookupBtn').addEventListener('click', doLookup);
     document.getElementById('addManuallyBtn').addEventListener('click', () => {
+      saveBottledDateFromStep1();
       state.selected = null;
       renderStep3({});
     });
@@ -724,9 +737,16 @@ document.getElementById('tableBody').classList.add('ready');
     });
   }
 
+  function saveBottledDateFromStep1() {
+    state.bottledY = (document.getElementById('s1-bottled-y')?.value || '').trim();
+    state.bottledM = document.getElementById('s1-bottled-m')?.value || '';
+    state.bottledD = (document.getElementById('s1-bottled-d')?.value || '').trim();
+  }
+
   // ── Step 2: Results ───────────────────────────────────────────────────────
 
   function doLookup() {
+    saveBottledDateFromStep1();
     const q = document.getElementById('lookupName').value.trim();
     const brewery = document.getElementById('lookupBrewery').value.trim();
     if (!q) return;
@@ -820,12 +840,12 @@ document.getElementById('tableBody').classList.add('ready');
         <input class="add-field" id="f-brewer" type="text" value="${esc(beer.brewer || '')}" list="brewerListData3" required>
         <label>Bottled</label>
         <div class="date-row">
-          <input class="add-field" id="f-bottled-y" type="number" placeholder="YYYY" min="1900" max="2100" style="width:70px">
+          <input class="add-field" id="f-bottled-y" type="number" placeholder="YYYY" min="1900" max="2100" style="width:70px" value="${state.bottledY}">
           <select class="add-field" id="f-bottled-m">
             <option value="">—</option>
-            ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('')}
+            ${MONTHS.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}" ${state.bottledM === String(i+1).padStart(2,'0') ? 'selected' : ''}>${m}</option>`).join('')}
           </select>
-          <input class="add-field" id="f-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px">
+          <input class="add-field" id="f-bottled-d" type="number" placeholder="DD" min="1" max="31" style="width:55px" value="${state.bottledD}">
         </div>
         <label>ABV</label>
         <input class="add-field" id="f-abv" type="number" step="0.1" min="0" max="100" value="${beer.abv != null ? beer.abv : ''}">
