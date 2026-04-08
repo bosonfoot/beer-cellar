@@ -1,0 +1,69 @@
+# Beer Cellar — Scenario Test Cases
+#
+# Each entry is a real beer to run through the full Add Beer flow:
+#   search Untappd → fetch details → add to DB → wait for research
+#
+# Required fields:
+#   name:     Beer name to search (don't include brewery)
+#   brewery:  Brewery name to search
+#
+# Optional fields:
+#   notes:        Why this case is interesting / what to watch for
+#   expect_abv:   Rough expected ABV for sanity check (e.g. 5.0)
+#   expect_style: Substring expected in style field (e.g. "Gueuze")
+#   untappd_id:   Pin to a specific Untappd beer ID (skips search, uses this directly)
+
+beers:
+
+  # ── Baseline ────────────────────────────────────────────────────────────────
+  - name: Gueuze 100% Lambic Bio
+    brewery: Cantillon
+    expect_abv: 5.0
+    expect_style: Gueuze
+    notes: >
+      Easy baseline. Well-known beer, should resolve perfectly every time.
+      Good reference point - if this fails, something is fundamentally broken.
+
+  # ── Tricky name parsing ──────────────────────────────────────────────────────
+  - name: Chimacum Valley
+    brewery: Floodland Brewing
+    expect_style: Saison
+    notes: >
+      Tricky - Untappd lists this as "Floodland Brewing Chimacum Valley (2021/2022)"
+      with the brewery name baked into the beer name. Watch for name duplication
+      in the brewer field and year parsing.
+
+  # ── Non-ASCII / numberic brewery name ───────────────────────────────────────
+  - name: Oude Geuze
+    brewery: 3 Fonteinen
+    expect_style: Gueuze
+    notes: >
+      Brewery name starts with a number. Tests that search handles non-standard
+      brewery names. Also a good research target — well-documented aging profile.
+
+  # ── Common gueuze, strong research signal ───────────────────────────────────
+  - name: Mariage Parfait Gueuze
+    brewery: Boon
+    expect_abv: 8.0
+    expect_style: Gueuze
+    notes: >
+      Well-documented beer with a known drinking window. Good test for research
+      agent quality — if it can't find aging info on Mariage Parfait, something
+      is wrong with the research prompt or web search.
+
+  # ── Non-sour, mainstream brewery ────────────────────────────────────────────
+  - name: Tripel
+    brewery: Westmalle
+    expect_abv: 9.5
+    expect_style: Tripel
+    notes: >
+      Mainstream Trappist beer — not a sour, not a small brewery. Tests that
+      the lookup and research work for non-lambic styles. Widely available
+      so Untappd data should be complete.
+
+  # ── Add obscure / hard-to-find beers below ──────────────────────────────────
+  # These are good for testing graceful degradation when Untappd has sparse data.
+  #
+  # - name: Some Obscure One-Off
+  #   brewery: Tiny Brewery
+  #   notes: Tests behavior when Untappd has little to no data for a beer.
