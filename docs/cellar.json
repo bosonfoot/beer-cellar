@@ -63,6 +63,27 @@
     "image_path": "static/images/beers/beer_17.jpeg"
   },
   {
+    "id": 79,
+    "name": "Oude Geuze",
+    "brewer": "Brouwerij 3 Fonteinen",
+    "date_bottled": null,
+    "drink_after": "2023-06",
+    "drink_by": "2033-04",
+    "research": "3 Fonteinen Oude Geuze bottles typically have a best-by date twenty years from the bottling date, and a gueuze can be kept for 10\u201320 years. A 2023 bottling would reach full drinkability after initial bottle conditioning (~6 months) and can age successfully through 2043. The 2023 vintage should be ready around mid-2023 after conditioning and will remain excellent through early 2033 with proper cellar storage.",
+    "food_pairings": null,
+    "considerations": null,
+    "date_added": "2026-04-08",
+    "abv": 6.0,
+    "image_url": null,
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": 2023,
+    "untappd_rating": 4.04947,
+    "imbibe_notes": null,
+    "label": "Test",
+    "image_path": "static/images/default.svg"
+  },
+  {
     "id": 18,
     "name": "Tete de Cuvee",
     "brewer": "Side Project Brewing",
