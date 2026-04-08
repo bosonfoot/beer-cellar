@@ -18,6 +18,7 @@ beers:
   # ── Baseline ────────────────────────────────────────────────────────────────
   - name: Gueuze 100% Lambic Bio
     brewery: Cantillon
+    year: 2023
     expect_abv: 5.0
     expect_style: Gueuze
     notes: >
@@ -27,6 +28,7 @@ beers:
   # ── Tricky name parsing ──────────────────────────────────────────────────────
   - name: Chimacum Valley
     brewery: Floodland Brewing
+    year: 2022
     expect_style: Saison
     notes: >
       Tricky - Untappd lists this as "Floodland Brewing Chimacum Valley (2021/2022)"
@@ -36,6 +38,7 @@ beers:
   # ── Non-ASCII / numberic brewery name ───────────────────────────────────────
   - name: Oude Geuze
     brewery: 3 Fonteinen
+    year: 2023
     expect_style: Gueuze
     notes: >
       Brewery name starts with a number. Tests that search handles non-standard
@@ -44,6 +47,7 @@ beers:
   # ── Common gueuze, strong research signal ───────────────────────────────────
   - name: Mariage Parfait Gueuze
     brewery: Boon
+    year: 2022
     expect_abv: 8.0
     expect_style: Gueuze
     notes: >
@@ -54,6 +58,7 @@ beers:
   # ── Non-sour, mainstream brewery ────────────────────────────────────────────
   - name: Tripel
     brewery: Westmalle
+    year: 2024
     expect_abv: 9.5
     expect_style: Tripel
     notes: >

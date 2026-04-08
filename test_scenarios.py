@@ -71,10 +71,11 @@ def divider(char='-', width=64):
 # ── Scenario runner ───────────────────────────────────────────────────────────
 
 def run_scenario(s, base_url, scenario, wait_for_research=False, keep=False):
-    name     = scenario['name']
-    brewery  = scenario['brewery']
-    notes    = scenario.get('notes', '').strip()
-    exp_abv  = scenario.get('expect_abv')
+    name      = scenario['name']
+    brewery   = scenario['brewery']
+    year      = scenario.get('year')
+    notes     = scenario.get('notes', '').strip()
+    exp_abv   = scenario.get('expect_abv')
     exp_style = scenario.get('expect_style')
     pinned_id = scenario.get('untappd_id')
 
@@ -162,9 +163,8 @@ def run_scenario(s, base_url, scenario, wait_for_research=False, keep=False):
         'style':         returned_style,
         'untappd_rating': detail.get('rating'),
         'label':         'Test',
+        'year':          year or detail.get('year'),
     }
-    if detail.get('year'):
-        payload['year'] = detail['year']
 
     try:
         r = s.post(f'{base_url}/api/beers', json=payload, timeout=15)

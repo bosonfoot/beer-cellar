@@ -132,6 +132,12 @@ def get_beer(untappd_id, slug):
             if rv:
                 result["rating"] = float(rv)
             result["brewer"] = (ld.get("brand") or {}).get("name")
+            # Untappd JSON-LD often bakes the brewery name into the beer name
+            # (e.g. "Brouwerij Boon Geuze Mariage Parfait"). Strip it.
+            if result["name"] and result["brewer"]:
+                prefix = result["brewer"] + " "
+                if result["name"].startswith(prefix):
+                    result["name"] = result["name"][len(prefix):]
         except (json.JSONDecodeError, AttributeError):
             pass
 

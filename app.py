@@ -82,8 +82,7 @@ def _delete_background(name, brewer):
 
 
 def _publish_background(beer_id, data):
-    if not _publish_lock.acquire(blocking=False):
-        return
+    _publish_lock.acquire()
     try:
         import research_agent
         research_agent.run(
