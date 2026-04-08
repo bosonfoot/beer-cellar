@@ -88,7 +88,8 @@
       "Bash(python export_static.py)",
       "Bash(python -c \"import requests; print\\('requests ok'\\)\")",
       "Bash(python test_battery.py --verbose)",
-      "Bash(python test_scenarios.py)"
+      "Bash(python test_scenarios.py)",
+      "Bash(python test_battery.py)"
     ]
   }
 }
