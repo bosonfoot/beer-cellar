@@ -82,16 +82,18 @@ def _delete_background(name, brewer):
 
 
 def _publish_background(beer_id, data):
+    # Research runs immediately — no lock needed, it only writes to its own DB row.
+    import research_agent
+    research_agent.run(
+        beer_id=beer_id,
+        name=data['name'],
+        brewer=data['brewer'],
+        style=data.get('style'),
+        year=data.get('year'),
+    )
+    # Git operations must be serialized to prevent push conflicts.
     _publish_lock.acquire()
     try:
-        import research_agent
-        research_agent.run(
-            beer_id=beer_id,
-            name=data['name'],
-            brewer=data['brewer'],
-            style=data.get('style'),
-            year=data.get('year'),
-        )
         subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
         subprocess.run(['git', 'add', '-A'], cwd=REPO)
         subprocess.run(['git', 'commit', '--allow-empty', '-m',
