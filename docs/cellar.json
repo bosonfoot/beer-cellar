@@ -252,6 +252,27 @@
     "image_path": "static/images/beers/beer_2.jpg"
   },
   {
+    "id": 81,
+    "name": "Westmalle Trappist Tripel",
+    "brewer": "Brouwerij der Trappisten van Westmalle",
+    "date_bottled": null,
+    "drink_after": "2025-01",
+    "drink_by": "2029-01",
+    "research": "Belgian Tripels generally benefit from at least one year of aging, but some may continue to improve with up to five years of age or even longer. Westmalle Tripel holds up well in the bottle over time and softens with age. For a 2024 vintage, this suggests drinking between early 2025 (fresh) and early 2029 (peak window). The brewery's official website and secondary sources do not specify a precise drinking window, so guidance is based on Belgian Tripel aging guidelines and documented experiences with this specific beer.",
+    "food_pairings": null,
+    "considerations": null,
+    "date_added": "2026-04-08",
+    "abv": 9.5,
+    "image_url": null,
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": 2024,
+    "untappd_rating": 3.808,
+    "imbibe_notes": null,
+    "label": "Test",
+    "image_path": "static/images/default.svg"
+  },
+  {
     "id": 9,
     "name": "MMXXIV Gruner Veltliner",
     "brewer": "Floodland Brewing",
