@@ -586,5 +586,26 @@
     "imbibe_notes": null,
     "label": "Test",
     "image_path": "static/images/default.svg"
+  },
+  {
+    "id": 68,
+    "name": "Floodland Brewing Chimacum Valley (2021/2022)",
+    "brewer": "Floodland Brewing",
+    "date_bottled": null,
+    "drink_after": null,
+    "drink_by": null,
+    "research": "Chimacum Valley (2021/2022) was bottled 02/23/2023 per Floodland's bottle listings, but no specific aging window documentation exists on the brewery's website or verified beer databases. As a mixed-culture, bottle-conditioned saison without fruit additions, it likely has moderate aging potential, but without brewery guidance, reliable window estimates cannot be provided.",
+    "food_pairings": null,
+    "considerations": null,
+    "date_added": "2026-04-08",
+    "abv": 5.69,
+    "image_url": null,
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": null,
+    "untappd_rating": 4.31828,
+    "imbibe_notes": null,
+    "label": "Test",
+    "image_path": "static/images/brewers/floodland_brewing.png"
   }
 ]
