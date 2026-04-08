@@ -209,10 +209,17 @@ def run_scenario(s, base_url, scenario, wait_for_research=False, keep=False):
         print(f'  [KEEP] Beer left in DB (id={beer_id}, label=Test)')
     else:
         try:
+            # Delete from DB
             s.delete(f'{base_url}/api/beers/{beer_id}', timeout=10)
+            # Also remove downloaded image file so it doesn't litter the repo
+            img_path = added.get('image_path', '')
+            if img_path:
+                full_path = os.path.join(os.path.dirname(__file__), img_path.lstrip('/').replace('/', os.sep))
+                if os.path.exists(full_path):
+                    os.remove(full_path)
             print(f'  Cleaned up (id={beer_id} deleted)')
-        except Exception:
-            print(f'  WARNING: Could not delete beer id={beer_id}')
+        except Exception as e:
+            print(f'  WARNING: Cleanup incomplete: {e}')
 
     all_passed = all(passes)
     print()
