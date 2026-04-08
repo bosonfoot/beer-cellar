@@ -649,5 +649,26 @@
     "imbibe_notes": null,
     "label": "Test",
     "image_path": "static/images/default.svg"
+  },
+  {
+    "id": 76,
+    "name": "Westmalle Trappist Tripel",
+    "brewer": "Brouwerij der Trappisten van Westmalle",
+    "date_bottled": null,
+    "drink_after": null,
+    "drink_by": null,
+    "research": null,
+    "food_pairings": null,
+    "considerations": null,
+    "date_added": "2026-04-08",
+    "abv": 9.5,
+    "image_url": null,
+    "date_imbibed": null,
+    "quantity": 1,
+    "year": 2024,
+    "untappd_rating": 3.808,
+    "imbibe_notes": null,
+    "label": "Test",
+    "image_path": "static/images/default.svg"
   }
 ]
