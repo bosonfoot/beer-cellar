@@ -30,6 +30,7 @@ beers:
     brewery: Floodland Brewing
     year: 2022
     expect_style: Saison
+    no_drink_window: true
     notes: >
       Tricky - Untappd lists this as "Floodland Brewing Chimacum Valley (2021/2022)"
       with the brewery name baked into the beer name. Watch for name duplication

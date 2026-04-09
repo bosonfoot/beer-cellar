@@ -91,6 +91,10 @@ def _publish_background(beer_id, data):
         style=data.get('style'),
         year=data.get('year'),
     )
+    # Skip git operations for test/draft beers.
+    if data.get('label') == 'Test':
+        return
+
     # Git operations must be serialized to prevent push conflicts.
     _publish_lock.acquire()
     try:

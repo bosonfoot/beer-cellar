@@ -71,13 +71,14 @@ def divider(char='-', width=64):
 # ── Scenario runner ───────────────────────────────────────────────────────────
 
 def run_scenario(s, base_url, scenario, wait_for_research=False, keep=False):
-    name      = scenario['name']
-    brewery   = scenario['brewery']
-    year      = scenario.get('year')
-    notes     = scenario.get('notes', '').strip()
-    exp_abv   = scenario.get('expect_abv')
-    exp_style = scenario.get('expect_style')
-    pinned_id = scenario.get('untappd_id')
+    name             = scenario['name']
+    brewery          = scenario['brewery']
+    year             = scenario.get('year')
+    notes            = scenario.get('notes', '').strip()
+    exp_abv          = scenario.get('expect_abv')
+    exp_style        = scenario.get('expect_style')
+    pinned_id        = scenario.get('untappd_id')
+    no_drink_window  = scenario.get('no_drink_window', False)
 
     passes = []
     beer_id = None
@@ -183,24 +184,46 @@ def run_scenario(s, base_url, scenario, wait_for_research=False, keep=False):
 
     # ── Step 4: Research (optional) ───────────────────────────────────────────
     if wait_for_research:
-        print('  Waiting for research agent (up to 90s)...')
-        found = False
-        for _ in range(30):
-            time.sleep(3)
-            try:
-                r = s.get(f'{base_url}/api/beers/{beer_id}', timeout=10)
-                b = r.json()
-                if b.get('drink_after') or b.get('drink_by'):
-                    found = True
-                    break
-            except Exception:
-                pass
-        passes.append(found)
-        check('Research agent found drink window', found)
-        if found:
-            review('Drink after', b.get('drink_after'))
-            review('Drink by', b.get('drink_by'))
-            review('Research notes', b.get('research'))
+        if no_drink_window:
+            # For fresh-style beers, check that research ran (notes populated)
+            # rather than requiring drink_after/drink_by dates.
+            print('  Waiting for research agent (up to 90s, expecting no date window)...')
+            found = False
+            b = {}
+            for _ in range(30):
+                time.sleep(3)
+                try:
+                    r = s.get(f'{base_url}/api/beers/{beer_id}', timeout=10)
+                    b = r.json()
+                    if b.get('research'):
+                        found = True
+                        break
+                except Exception:
+                    pass
+            passes.append(found)
+            check('Research agent ran (no date window expected)', found)
+            if found:
+                review('Research notes', b.get('research'))
+        else:
+            print('  Waiting for research agent (up to 90s)...')
+            found = False
+            b = {}
+            for _ in range(30):
+                time.sleep(3)
+                try:
+                    r = s.get(f'{base_url}/api/beers/{beer_id}', timeout=10)
+                    b = r.json()
+                    if b.get('drink_after') or b.get('drink_by'):
+                        found = True
+                        break
+                except Exception:
+                    pass
+            passes.append(found)
+            check('Research agent found drink window', found)
+            if found:
+                review('Drink after', b.get('drink_after'))
+                review('Drink by', b.get('drink_by'))
+                review('Research notes', b.get('research'))
     else:
         print('  [SKIP] Research wait skipped (run with --research to enable)')
 
