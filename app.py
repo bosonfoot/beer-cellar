@@ -90,6 +90,7 @@ def _publish_background(beer_id, data):
         brewer=data['brewer'],
         style=data.get('style'),
         year=data.get('year'),
+        date_bottled=data.get('date_bottled'),
     )
     # Skip git operations for test/draft beers.
     if data.get('label') == 'Test':
@@ -202,7 +203,8 @@ def api_research_beer(beer_id):
     t = threading.Thread(
         target=_publish_background,
         args=(beer_id, {'name': beer['name'], 'brewer': beer['brewer'],
-                        'style': None, 'year': beer.get('year')}),
+                        'style': None, 'year': beer.get('year'),
+                        'date_bottled': beer.get('date_bottled')}),
         daemon=True,
     )
     t.start()

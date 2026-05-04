@@ -42,7 +42,7 @@ Date format: YYYY-MM (year and month). If only a year is known, use YYYY-01.
 If you cannot find reliable aging information, set the date fields to null."""
 
 
-def run(beer_id, name, brewer, style=None, year=None):
+def run(beer_id, name, brewer, style=None, year=None, date_bottled=None):
     """Research drink window for a beer and update the DB."""
     api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
@@ -52,11 +52,16 @@ def run(beer_id, name, brewer, style=None, year=None):
     print(f'[research] Starting research for beer {beer_id}: "{name}" by {brewer}')
     client = anthropic.Anthropic(api_key=api_key)
 
+    # Fall back to the year portion of date_bottled if no explicit vintage year
+    effective_year = year or (date_bottled.split('-')[0] if date_bottled else None)
+
     prompt = f'Research the drinking window for: "{name}" by {brewer}'
     if style:
         prompt += f', Style: {style}'
-    if year:
-        prompt += f', Vintage: {year}'
+    if effective_year:
+        prompt += f', Vintage: {effective_year}'
+    if date_bottled:
+        prompt += f', Bottled: {date_bottled}'
 
     print(f'[research] Prompt: {prompt}')
     messages = [{"role": "user", "content": prompt}]
