@@ -586,26 +586,5 @@
     "imbibe_notes": null,
     "label": null,
     "image_path": "static/images/beers/beer_1137282.jpeg"
-  },
-  {
-    "id": 88,
-    "name": "The Broken Truck: Grande Cuv\u00e9e",
-    "brewer": "de Garde Brewing",
-    "date_bottled": "2024-11",
-    "drink_after": null,
-    "drink_by": null,
-    "research": "De Garde Brewing's website describes the 2024 Grande Cuv\u00e9e as a multi-year blend of spontaneous wild ale with extended conditioning, but no specific drinking window is provided by the brewery or major review sites.",
-    "food_pairings": null,
-    "considerations": "For this beer, we pulled threads from the same batches, components and blends that have constituted what became The Broken Truck over the last seven years. It is a blend of seven different years of barrels, and has an average age of all of the components, adjusted for volume, of 39 months in oak. It is an elaborate expression of what has been made, and what it was made from.\n\nIt is funky, complex and just that damn good. There\u2019s a balancing vibrancy to the oldest components provided by the younger, but the balance of the expression is definitely good, pure, long-matured spontaneous barrel funk. It is, perhaps, a new high water mark of quality and depth for our brewery.",
-    "date_added": "2026-05-04",
-    "abv": 5.5,
-    "image_url": "/static/images/beers/beer_4434891.jpeg",
-    "date_imbibed": null,
-    "quantity": 1,
-    "year": null,
-    "untappd_rating": 4.46764,
-    "imbibe_notes": null,
-    "label": null,
-    "image_path": "static/images/beers/beer_4434891.jpeg"
   }
 ]
