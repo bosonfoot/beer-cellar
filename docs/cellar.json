@@ -567,6 +567,27 @@
     "image_path": "static/images/beers/beer_25.jpeg"
   },
   {
+    "id": 87,
+    "name": "The Broken Truck",
+    "brewer": "de Garde Brewing",
+    "date_bottled": "2025-12",
+    "drink_after": "2027-12",
+    "drink_by": "2032-12",
+    "research": "No official drinking window is published by de Garde Brewing. Based on style (lambic-inspired spontaneous wild ale) and bottling date (December 2025), an estimated window of 2-7 years from bottling has been applied: drink after December 2027, drink by December 2032. The beer is a blend from three different years of barrel-aged components, suggesting it has already undergone significant oak maturation and may reward extended cellaring.",
+    "food_pairings": null,
+    "considerations": "Shortly after we started distributing, we had our cursed old brewery truck break down while carrying a load of kegs to our distributor. Our distributor was about to close for the weekend, and we had no way to get them there in time, and nowhere to store them in good condition during the opressively hot weather. As is our habit during times of stress, we sought a cold beer at the newly opened taproom and growler station around the corner, Tin Bucket. After chatting with the owner, he expressed his disappointment at not being able to get our beer. To cut it short, he and his partner bought the entire truckload, saving not just the beer, but quite literally our business. \n\nThis beer is for them. We worked with them to blend this from three different years of our lambic inspired barrels. We chose a blend with a beautiful and expressive Brett character that has only blossomed during its extended conditioning. Our favorite beer to date.",
+    "date_added": "2026-05-04",
+    "abv": 5.0,
+    "image_url": "/static/images/beers/beer_1137282.jpeg",
+    "date_imbibed": null,
+    "quantity": 2,
+    "year": null,
+    "untappd_rating": 4.45233,
+    "imbibe_notes": null,
+    "label": null,
+    "image_path": "static/images/beers/beer_1137282.jpeg"
+  },
+  {
     "id": 20,
     "name": "Oude Kriek",
     "brewer": "De Cam",
@@ -586,26 +607,5 @@
     "imbibe_notes": null,
     "label": null,
     "image_path": "static/images/beers/beer_20.jpeg"
-  },
-  {
-    "id": 87,
-    "name": "The Broken Truck",
-    "brewer": "de Garde Brewing",
-    "date_bottled": "2025-12",
-    "drink_after": null,
-    "drink_by": null,
-    "research": "De Garde Brewing states the blend is 'chosen with a beautiful and expressive Brett character that has only blossomed during its extended conditioning,' suggesting cellaring potential, but no official drinking window is published. CellarTracker shows no specified drinking window for previous vintages. Without brewery-provided guidance, reliable aging recommendations cannot be determined.",
-    "food_pairings": null,
-    "considerations": "Shortly after we started distributing, we had our cursed old brewery truck break down while carrying a load of kegs to our distributor. Our distributor was about to close for the weekend, and we had no way to get them there in time, and nowhere to store them in good condition during the opressively hot weather. As is our habit during times of stress, we sought a cold beer at the newly opened taproom and growler station around the corner, Tin Bucket. After chatting with the owner, he expressed his disappointment at not being able to get our beer. To cut it short, he and his partner bought the entire truckload, saving not just the beer, but quite literally our business. \n\nThis beer is for them. We worked with them to blend this from three different years of our lambic inspired barrels. We chose a blend with a beautiful and expressive Brett character that has only blossomed during its extended conditioning. Our favorite beer to date.",
-    "date_added": "2026-05-04",
-    "abv": 5.0,
-    "image_url": "/static/images/beers/beer_1137282.jpeg",
-    "date_imbibed": null,
-    "quantity": 2,
-    "year": null,
-    "untappd_rating": 4.45233,
-    "imbibe_notes": null,
-    "label": null,
-    "image_path": "static/images/beers/beer_1137282.jpeg"
   }
 ]
