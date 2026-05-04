@@ -39,7 +39,18 @@ Return ONLY a JSON object — no prose before or after — with these fields:
 }
 
 Date format: YYYY-MM (year and month). If only a year is known, use YYYY-01.
-If you cannot find reliable aging information, set the date fields to null."""
+
+If no official window is published, do NOT return null — instead apply a style-based estimate
+using the bottling date (or vintage year) as the starting point:
+  - Lambic / gueuze / spontaneous wild ale: drink_after = bottling + 2yr, drink_by = bottling + 7yr
+  - Barrel-aged sour / mixed-fermentation ale: drink_after = bottling + 1yr, drink_by = bottling + 5yr
+  - Belgian strong ale / barleywine / imperial stout: drink_after = bottling + 2yr, drink_by = bottling + 8yr
+  - Standard ale / lager / IPA: drink_after = bottling + 0yr, drink_by = bottling + 1yr
+
+When using an estimate, note it clearly in the research field:
+"No official window published. Estimated [drink_after]–[drink_by] based on [style] aging characteristics and bottling date [YYYY-MM]."
+
+Only return null for drink_after/drink_by if the bottling date and style are both completely unknown."""
 
 
 def run(beer_id, name, brewer, style=None, year=None, date_bottled=None):
