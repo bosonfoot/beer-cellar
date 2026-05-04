@@ -91,7 +91,10 @@
       "Bash(python test_scenarios.py)",
       "Bash(python test_battery.py)",
       "Bash(python test_battery.py --help)",
-      "Bash(python test_scenarios.py --research --keep)"
+      "Bash(python test_scenarios.py --research --keep)",
+      "Bash(sqlite3 cellar.db \"SELECT id, name, label FROM beers WHERE label = 'Test' OR name LIKE '%test%' OR name LIKE '%Test%';\")",
+      "Bash(grep -E \"\\\\/api\\\\/beers['\\\\`]|cellar\\\\.json\")",
+      "Bash(ls *.py *.sh)"
     ]
   }
 }
