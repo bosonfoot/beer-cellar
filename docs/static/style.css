@@ -414,6 +414,25 @@ tr[data-imbibed] td { opacity: 0.5; }
 }
 .btn-modal-reresearch:hover { opacity: 1; }
 .btn-modal-reresearch:disabled { opacity: 0.4; cursor: default; }
+.btn-modal-reresearch.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.8;
+}
+.btn-modal-reresearch.loading::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--amber, #c8952a);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
 
 .edit-beer-form {
   display: grid;
