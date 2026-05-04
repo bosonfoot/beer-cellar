@@ -33,5 +33,6 @@ Magic Lambic 2025
 Ashanti 2025
 
 Holy Mountain Vesper (2025 bottling, 2 bottles) ✓ added
+The Broken Truck Grande Cuvée (de Garde, bottled 11/2024, 2 bottles) ✓ added
 
 

@@ -89,6 +89,13 @@ Mark each inserted beer in `beers.md` with `✓ added` on the same line, or add 
 - Roman numerals: MMXXI=2021, MMXXII=2022, MMXXIII=2023, MMXXIV=2024, MMXXV=2025
 - If only the bottling date is known, use the bottling year
 
-## Other rules
+## Drink window rules
+- If an explicit window is found (brewery, bottle log, review): use it directly.
+- If no explicit window exists but style/vintage info allows a reasonable estimate: **apply an estimated window** and note it in the research field. Don't leave `drink_after`/`drink_by` blank just because no official source exists.
+  - Typical estimates by style (adjust for ABV, barrel aging, vintage):
+    - Lambic / gueuze / spontaneous wild ale: drink after 2–3 yr, drink by 5–8 yr from bottling
+    - Barrel-aged sour / mixed-ferm: drink after 1–2 yr, drink by 4–6 yr
+    - Belgian strong / barleywine: drink after 2 yr, drink by 8–10 yr
+  - Research note format: *"No official window published. Estimated [drink_after]–[drink_by] based on [style] aging characteristics and [bottling date]."*
 - Flag any beers past their `drink_by` date
 - If a fetch fails or returns wrong data: try ONE alternate source, then move on
