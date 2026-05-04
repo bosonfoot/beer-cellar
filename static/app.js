@@ -561,6 +561,7 @@ function setupReresearchButton(beer) {
   btn.addEventListener('click', () => {
     btn.disabled = true;
     btn.textContent = 'Researching…';
+    btn.classList.add('loading');
     fetch(`/api/beers/${beer.id}/research`, { method: 'POST' })
       .then(r => r.json())
       .then(() => {
@@ -571,6 +572,7 @@ function setupReresearchButton(beer) {
             clearInterval(poll);
             btn.disabled = false;
             btn.textContent = 'Re-research';
+            btn.classList.remove('loading');
             return;
           }
           fetch(`/api/beers/${beer.id}`)
@@ -579,6 +581,7 @@ function setupReresearchButton(beer) {
               // Consider it done if research text changed or dates appeared
               if (updated.drink_after || updated.drink_by || updated.research !== beer.research) {
                 clearInterval(poll);
+                btn.classList.remove('loading');
                 updateRowFromResearch(updated);
                 openModal(updated.id);
               }
