@@ -346,6 +346,20 @@ function renderModal(beer) {
       </div>`;
   }
 
+  if (beer.tasting_history && beer.tasting_history.length > 0) {
+    html += `
+      <div class="modal-section">
+        <div class="modal-section-title">Previous Tastings</div>`;
+    for (const t of beer.tasting_history) {
+      html += `
+        <div class="tasting-entry">
+          <div class="tasting-date">${formatDate(t.date_imbibed)}</div>
+          ${t.imbibe_notes ? `<div class="tasting-entry-notes">${esc(t.imbibe_notes)}</div>` : ''}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
   if (beer.research) {
     html += `
       <div class="modal-section">
@@ -421,23 +435,47 @@ function setupImbibeButton(beerId) {
       body: JSON.stringify({ notes: notes || null }),
     })
       .then(r => r.json())
-      .then(beer => {
-        // Update the row in the table live
-        const row = document.querySelector(`tr.beer-row[data-id="${beerId}"]`);
-        if (row) {
-          row.dataset.imbibed = '1';
-          // Re-run badge + days logic for this row's cells
-          row.querySelectorAll('td.col-days-left, .badge').forEach(el => {
-            el.dataset.imbibed = '1';
-          });
-          applyBadges();
-          sortTable();
+      .then(data => {
+        const beer = data.beer;
+        const imbibedRecord = data.imbibed_record;
+
+        if (imbibedRecord) {
+          // Split: original qty decremented, new imbibed record spun off
+          const row = document.querySelector(`tr.beer-row[data-id="${beerId}"]`);
+          if (row) {
+            const nameCell = row.querySelector('.beer-name');
+            if (nameCell) {
+              const badge = nameCell.querySelector('.qty-badge');
+              if (beer.quantity > 1) {
+                if (badge) badge.textContent = `×${beer.quantity}`;
+              } else if (badge) {
+                badge.remove();
+              }
+            }
+          }
+          injectNewBeerRow(imbibedRecord);
+          // Refresh modal to show updated active beer (with tasting history)
+          document.getElementById('modalContent').innerHTML = renderModal(beer);
+          setupImbibeButton(beer.id);
+          setupDeleteButton(beer.id);
+          setupEditButton(beer);
+          setupReresearchButton(beer);
+        } else {
+          // Full imbibe (qty was 1)
+          const row = document.querySelector(`tr.beer-row[data-id="${beerId}"]`);
+          if (row) {
+            row.dataset.imbibed = '1';
+            row.querySelectorAll('td.col-days-left, .badge').forEach(el => {
+              el.dataset.imbibed = '1';
+            });
+            applyBadges();
+            sortTable();
+          }
+          const card = document.querySelector(`.beer-card[data-id="${beerId}"]`);
+          if (card) card.dataset.imbibed = '1';
+          syncCards();
+          document.getElementById('modalContent').innerHTML = renderModal(beer);
         }
-        const card = document.querySelector(`.beer-card[data-id="${beerId}"]`);
-        if (card) card.dataset.imbibed = '1';
-        syncCards();
-        // Refresh modal content to show imbibed state
-        document.getElementById('modalContent').innerHTML = renderModal(beer);
       });
   });
 }
@@ -743,6 +781,56 @@ updateSortIndicators();
 sortTable();
 setView(getPreferredView());
 document.getElementById('tableBody').classList.add('ready');
+
+// ── Inject new row into the live table ────────────────────────────────────────
+
+function injectNewBeerRow(beer) {
+  const emptyRow = document.getElementById('emptyRow');
+  if (emptyRow) emptyRow.remove();
+
+  const imgSrc = beer.image_path || '/static/images/default.svg';
+  const abvText = beer.abv != null ? beer.abv.toFixed(1) + '%' : '—';
+  const ratingText = beer.untappd_rating != null ? beer.untappd_rating.toFixed(2) : '—';
+  const yearText = beer.year || '—';
+  const qtyHtml = beer.quantity > 1 ? ` <span class="qty-badge">×${beer.quantity}</span>` : '';
+
+  const tr = document.createElement('tr');
+  tr.className = 'beer-row';
+  tr.dataset.id = beer.id;
+  if (beer.date_imbibed) tr.dataset.imbibed = '1';
+  tr.innerHTML = `
+    <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(beer.name)}" onerror="this.src='/static/images/default.svg'"></td>
+    <td class="beer-name">${esc(beer.name)}${qtyHtml}</td>
+    <td class="col-year">${yearText}</td>
+    <td class="col-brewer">${esc(shortBrewer(beer.brewer))}</td>
+    <td class="col-abv">${abvText}</td>
+    <td class="col-rating">${ratingText}</td>
+    <td class="col-drink-after">${beer.drink_after || '—'}</td>
+    <td class="col-drink-by">${beer.drink_by || '—'}</td>
+    <td class="col-days-left"
+        data-by="${beer.drink_by || ''}"
+        data-after="${beer.drink_after || ''}"
+        data-imbibed="${beer.date_imbibed || ''}"
+        data-label="${beer.label || ''}">—</td>
+    <td><span class="badge"
+              data-after="${beer.drink_after || ''}"
+              data-by="${beer.drink_by || ''}"
+              data-imbibed="${beer.date_imbibed || ''}"
+              data-label="${beer.label || ''}"></span></td>`;
+
+  document.getElementById('tableBody').appendChild(tr);
+  tr.addEventListener('click', () => openModal(beer.id));
+
+  applyBadges();
+  sortTable();
+  syncCards();
+  applyFilters();
+
+  if (window.CELLAR_BREWERS && !window.CELLAR_BREWERS.includes(beer.brewer)) {
+    window.CELLAR_BREWERS.push(beer.brewer);
+    window.CELLAR_BREWERS.sort();
+  }
+}
 
 // ── Add Beer modal ────────────────────────────────────────────────────────────
 
@@ -1147,56 +1235,6 @@ document.getElementById('tableBody').classList.add('ready');
     applyBadges();
     sortTable();
     syncCards();
-  }
-
-  // ── Inject new row into the live table ───────────────────────────────────
-
-  function injectNewBeerRow(beer) {
-    const emptyRow = document.getElementById('emptyRow');
-    if (emptyRow) emptyRow.remove();
-
-    const imgSrc = beer.image_path || '/static/images/default.svg';
-    const abvText = beer.abv != null ? beer.abv.toFixed(1) + '%' : '—';
-    const ratingText = beer.untappd_rating != null ? beer.untappd_rating.toFixed(2) : '—';
-    const yearText = beer.year || '—';
-    const qtyHtml = beer.quantity > 1 ? ` <span class="qty-badge">×${beer.quantity}</span>` : '';
-
-    const tr = document.createElement('tr');
-    tr.className = 'beer-row';
-    tr.dataset.id = beer.id;
-    tr.innerHTML = `
-      <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(beer.name)}" onerror="this.src='/static/images/default.svg'"></td>
-      <td class="beer-name">${esc(beer.name)}${qtyHtml}</td>
-      <td class="col-year">${yearText}</td>
-      <td class="col-brewer">${esc(shortBrewer(beer.brewer))}</td>
-      <td class="col-abv">${abvText}</td>
-      <td class="col-rating">${ratingText}</td>
-      <td class="col-drink-after">${beer.drink_after || '—'}</td>
-      <td class="col-drink-by">${beer.drink_by || '—'}</td>
-      <td class="col-days-left"
-          data-by="${beer.drink_by || ''}"
-          data-after="${beer.drink_after || ''}"
-          data-imbibed="${beer.date_imbibed || ''}"
-          data-label="${beer.label || ''}">—</td>
-      <td><span class="badge"
-                data-after="${beer.drink_after || ''}"
-                data-by="${beer.drink_by || ''}"
-                data-imbibed="${beer.date_imbibed || ''}"
-                data-label="${beer.label || ''}"></span></td>`;
-
-    document.getElementById('tableBody').appendChild(tr);
-    tr.addEventListener('click', () => openModal(beer.id));
-
-    applyBadges();
-    sortTable();
-    syncCards();
-    applyFilters();
-
-    // Update brewer autocomplete list
-    if (window.CELLAR_BREWERS && !window.CELLAR_BREWERS.includes(beer.brewer)) {
-      window.CELLAR_BREWERS.push(beer.brewer);
-      window.CELLAR_BREWERS.sort();
-    }
   }
 
   // ── Event wiring ─────────────────────────────────────────────────────────

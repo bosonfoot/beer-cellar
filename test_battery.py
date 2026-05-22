@@ -291,7 +291,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/beers/{imbibe_id}/imbibe',
                    json={'notes': 'Tasted great.'})
         assert_ok('imbibe', r)
-        b = r.json()
+        b = r.json()['beer']
         assert b['date_imbibed'], 'date_imbibed should be set'
         assert_eq('notes', b['imbibe_notes'], 'Tasted great.')
 

@@ -68,17 +68,20 @@ def check_auth():
         abort(403)
 
 
-def _delete_background(name, brewer):
+def _export_and_push(commit_msg):
     if not _publish_lock.acquire(blocking=False):
         return
     try:
         subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
         subprocess.run(['git', 'add', '-A'], cwd=REPO)
-        subprocess.run(['git', 'commit', '--allow-empty', '-m',
-                        f'Remove {name} ({brewer})'], cwd=REPO)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m', commit_msg], cwd=REPO)
         subprocess.run(['git', 'push'], cwd=REPO)
     finally:
         _publish_lock.release()
+
+
+def _delete_background(name, brewer):
+    _export_and_push(f'Remove {name} ({brewer})')
 
 
 def _publish_background(beer_id, data):
@@ -163,8 +166,16 @@ def api_imbibe_beer(beer_id):
     if not beer:
         abort(404)
     data = request.get_json() or {}
-    db.imbibe_beer(beer_id, notes=data.get('notes'))
-    return jsonify(enrich(db.get_beer(beer_id)))
+    new_id = db.imbibe_beer(beer_id, notes=data.get('notes'))
+    active = enrich(db.get_beer(beer_id))
+    result = {'beer': active}
+    if new_id:
+        result['imbibed_record'] = enrich(db.get_beer(new_id))
+    if beer.get('label') != 'Test':
+        msg = f'Imbibe {beer["name"]} ({beer["brewer"]})'
+        t = threading.Thread(target=_export_and_push, args=(msg,), daemon=True)
+        t.start()
+    return jsonify(result)
 
 
 @app.route('/api/beers/<int:beer_id>', methods=['PUT'])

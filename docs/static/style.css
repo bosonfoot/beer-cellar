@@ -381,6 +381,21 @@ tr[data-imbibed] td { opacity: 0.5; }
 }
 .btn-imbibe-cancel:hover { color: var(--text); }
 
+.tasting-entry {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.tasting-entry:last-child { border-bottom: none; }
+.tasting-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+.tasting-entry-notes {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
 .modal-delete-row {
   display: flex;
   align-items: center;
