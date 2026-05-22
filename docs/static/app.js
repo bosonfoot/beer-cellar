@@ -195,6 +195,7 @@ function applyFilters() {
   const text = document.getElementById('filterText').value.toLowerCase();
   const status = document.getElementById('filterStatus').value;
   let visible = 0;
+  let bottles = 0;
 
   document.querySelectorAll('tr.beer-row').forEach(row => {
     const name = row.querySelector('td.beer-name').textContent.toLowerCase();
@@ -205,7 +206,10 @@ function applyFilters() {
     const matchStatus = !status || rowStatus === status;
 
     row.style.display = matchText && matchStatus ? '' : 'none';
-    if (matchText && matchStatus) visible++;
+    if (matchText && matchStatus) {
+      visible++;
+      bottles += parseInt(row.dataset.qty || 1);
+    }
   });
 
   document.querySelectorAll('.beer-card').forEach(card => {
@@ -213,18 +217,24 @@ function applyFilters() {
     if (row) card.style.display = row.style.display;
   });
 
-  updateCount(visible);
+  updateCount(visible, bottles);
 }
 
 // ── Beer count ────────────────────────────────────────────────────────────────
 
-function updateCount(n) {
+function updateCount(n, bottles) {
   const el = document.getElementById('beerCount');
-  if (el) el.textContent = n === 1 ? '1 beer' : `${n} beers`;
+  if (!el) return;
+  const beerStr = n === 1 ? '1 beer' : `${n} beers`;
+  const bottleStr = bottles === 1 ? '1 bottle' : `${bottles} bottles`;
+  el.textContent = `${beerStr}, ${bottleStr}`;
 }
 
 function initCount() {
-  updateCount(document.querySelectorAll('tr.beer-row').length);
+  const rows = document.querySelectorAll('tr.beer-row');
+  let bottles = 0;
+  rows.forEach(r => { bottles += parseInt(r.dataset.qty || 1); });
+  updateCount(rows.length, bottles);
 }
 
 // ── Detail modal ──────────────────────────────────────────────────────────────
@@ -796,6 +806,7 @@ function injectNewBeerRow(beer) {
   const tr = document.createElement('tr');
   tr.className = 'beer-row';
   tr.dataset.id = beer.id;
+  tr.dataset.qty = beer.quantity || 1;
   if (beer.date_imbibed) tr.dataset.imbibed = '1';
   tr.innerHTML = `
     <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(beer.name)}" onerror="this.src='/static/images/default.svg'"></td>

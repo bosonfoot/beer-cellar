@@ -70,7 +70,7 @@
     </thead>
     <tbody id="tableBody">
       {% for beer in beers %}
-      <tr class="beer-row" data-id="{{ beer.id }}" {% if beer.date_imbibed %}data-imbibed="1"{% endif %}>
+      <tr class="beer-row" data-id="{{ beer.id }}" data-qty="{{ beer.quantity or 1 }}" {% if beer.date_imbibed %}data-imbibed="1"{% endif %}>
         <td class="col-img">
           <img class="beer-thumb"
                src="{{ beer.image_path }}"
