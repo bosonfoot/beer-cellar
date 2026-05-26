@@ -206,6 +206,7 @@ def run_all(base_url, verbose=False):
             'name': '__TEST__ Edited Name',
             'brewer': '__TEST__ Edited Brewery',
             'quantity': 3,
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 200)
         b = r.json()
@@ -220,6 +221,7 @@ def run_all(base_url, verbose=False):
             'brewer': '__TEST__ Edited Brewery',
             'date_bottled': '2021',
             'quantity': 1,
+            'label': 'Test',
         })
         assert_ok('put', r)
         assert_eq('date_bottled', r.json()['date_bottled'], '2021')
@@ -232,6 +234,7 @@ def run_all(base_url, verbose=False):
             'brewer': '__TEST__ Edited Brewery',
             'date_bottled': '2021-04',
             'quantity': 1,
+            'label': 'Test',
         })
         assert_ok('put', r)
         assert_eq('date_bottled', r.json()['date_bottled'], '2021-04')
@@ -244,6 +247,7 @@ def run_all(base_url, verbose=False):
             'brewer': '__TEST__ Edited Brewery',
             'date_bottled': '2021-04-12',
             'quantity': 1,
+            'label': 'Test',
         })
         assert_ok('put', r)
         assert_eq('date_bottled', r.json()['date_bottled'], '2021-04-12')
@@ -257,6 +261,7 @@ def run_all(base_url, verbose=False):
             'drink_after': None,
             'drink_by': None,
             'quantity': 1,
+            'label': 'Test',
         })
         assert_ok('put', r)
         b = r.json()
@@ -455,6 +460,7 @@ def run_all(base_url, verbose=False):
             'name': '__TEST__ Edited Wine',
             'producer': '__TEST__ Edited Winery',
             'quantity': 2,
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 200)
         w = r.json()
@@ -494,6 +500,7 @@ def run_all(base_url, verbose=False):
             'name': '__TEST__ Edited Wine',
             'producer': '__TEST__ Edited Winery',
             'quantity': 2,
+            'label': 'Test',
         })
         assert_ok('reset qty', r)
         r2 = s.post(f'{base_url}/api/wines/{wine_id}/imbibe', json={'notes': 'First bottle.'})
