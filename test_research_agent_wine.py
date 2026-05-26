@@ -15,6 +15,9 @@ import sys
 import unittest
 from unittest.mock import patch, MagicMock
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -74,17 +77,17 @@ def run_all(verbose=False):
 
     # ── Article prefix stripping ──────────────────────────────────────────────
 
-    @test('Strip articles: "Le Gode" → "Gode"')
+    @test('Strip articles: "Le Gode" -> "Gode"')
     def _():
         stripped = research_agent_wine._strip_articles('Le Gode Vigna Montosoli')
         assert stripped == 'Gode Vigna Montosoli', f'Got: {stripped!r}'
 
-    @test('Strip articles: "La Chiuse" → "Chiuse"')
+    @test('Strip articles: "La Chiuse" -> "Chiuse"')
     def _():
         stripped = research_agent_wine._strip_articles('La Chiuse')
         assert stripped == 'Chiuse', f'Got: {stripped!r}'
 
-    @test('Strip articles: no prefix → unchanged')
+    @test('Strip articles: no prefix -> unchanged')
     def _():
         stripped = research_agent_wine._strip_articles('Boscarelli Vino Nobile')
         assert stripped == 'Boscarelli Vino Nobile', f'Got: {stripped!r}'
