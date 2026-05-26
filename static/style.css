@@ -135,6 +135,8 @@ tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; 
 tbody tr:last-child { border-bottom: none; }
 tbody tr.beer-row { cursor: pointer; }
 tbody tr.beer-row:hover { background: var(--surface2) !important; }
+tbody tr.wine-row { cursor: pointer; }
+tbody tr.wine-row:hover { background: var(--surface2) !important; }
 
 td {
   padding: 0.65rem 0.875rem;
