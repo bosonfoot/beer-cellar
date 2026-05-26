@@ -148,7 +148,6 @@
       <option value="year">Vintage</option>
       <option value="producer">Producer</option>
       <option value="region">Region</option>
-      <option value="rating">Rating</option>
       <option value="drink_after">Drink After</option>
       <option value="drink_by">Drink By</option>
     </select>
@@ -165,8 +164,6 @@
         <th data-col="producer" class="sortable wine-sortable">Producer <span class="sort-arrow"></span></th>
         <th data-col="region" class="sortable wine-sortable">Region <span class="sort-arrow"></span></th>
         <th data-col="varietal" class="sortable wine-sortable">Varietal <span class="sort-arrow"></span></th>
-        <th data-col="wine_type" class="sortable wine-sortable">Type <span class="sort-arrow"></span></th>
-        <th data-col="rating" class="sortable wine-sortable col-rating">Rating <span class="sort-arrow"></span></th>
         <th data-col="drink_after" class="sortable wine-sortable">Drink After <span class="sort-arrow"></span></th>
         <th data-col="drink_by" class="sortable wine-sortable">Drink By <span class="sort-arrow"></span></th>
         <th data-col="days_left" class="sortable wine-sortable">Days Left <span class="sort-arrow"></span></th>
@@ -192,8 +189,6 @@
         <td class="col-brewer">{{ wine.producer }}</td>
         <td class="col-region">{{ wine.region or '—' }}</td>
         <td class="col-varietal">{{ wine.varietal or '—' }}</td>
-        <td class="col-wine-type">{{ wine.wine_type or '—' }}</td>
-        <td class="col-rating">{{ ('%.0f' % wine.rating) if wine.rating is not none else '—' }}</td>
         <td class="col-drink-after">{{ wine.drink_after or '—' }}</td>
         <td class="col-drink-by">{{ wine.drink_by or '—' }}</td>
         <td class="col-days-left wine-days"
@@ -208,7 +203,7 @@
                   data-label="{{ wine.label or '' }}"></span></td>
       </tr>
       {% else %}
-      <tr id="wineEmptyRow"><td colspan="12">No wines in the cellar yet.</td></tr>
+      <tr id="wineEmptyRow"><td colspan="10">No wines in the cellar yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

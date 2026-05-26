@@ -1369,7 +1369,7 @@ function applyWineBadges() {
 
 let wineSortCol = 'days_left';
 let wineSortDir = 1;
-const WINE_NUMERIC_COLS = new Set(['year', 'rating', 'days_left']);
+const WINE_NUMERIC_COLS = new Set(['year', 'days_left']);
 
 function wineCellValue(row, col) {
   if (col === 'days_left') {
@@ -1377,7 +1377,7 @@ function wineCellValue(row, col) {
     return td ? td.dataset.sortVal || '' : '';
   }
   const cells = row.querySelectorAll('td');
-  const colIndex = { name: 1, year: 2, producer: 3, region: 4, varietal: 5, wine_type: 6, rating: 7, drink_after: 8, drink_by: 9 };
+  const colIndex = { name: 1, year: 2, producer: 3, region: 4, varietal: 5, drink_after: 6, drink_by: 7 };
   const idx = colIndex[col];
   if (idx === undefined) return '';
   const text = cells[idx].textContent.trim();
@@ -1475,7 +1475,6 @@ function syncWineCards() {
     const nameTd = row.querySelector('td.beer-name');
     const producer = row.querySelector('td.col-brewer')?.textContent.trim() || '';
     const year = row.querySelector('td.col-year')?.textContent.trim() || '';
-    const wineType = row.querySelector('td.col-wine-type')?.textContent.trim() || '';
     const rating = row.querySelector('td.col-rating')?.textContent.trim() || '';
     const daysTd = row.querySelector('td.wine-days');
     const badgeEl = row.querySelector('.wine-badge');
@@ -1488,7 +1487,6 @@ function syncWineCards() {
 
     const metaParts = [];
     if (year && year !== '—') metaParts.push(`<span>${year}</span>`);
-    if (wineType && wineType !== '—') metaParts.push(`<span>${wineType}</span>`);
     if (rating && rating !== '—') metaParts.push(`<span class="card-rating">${rating}</span>`);
 
     card.innerHTML = `
@@ -1904,8 +1902,6 @@ function injectNewWineRow(wine) {
     <td class="col-brewer">${esc(wine.producer)}</td>
     <td class="col-region">${esc(wine.region || '—')}</td>
     <td class="col-varietal">${esc(wine.varietal || '—')}</td>
-    <td class="col-wine-type">${esc(wine.wine_type || '—')}</td>
-    <td class="col-rating">${ratingText}</td>
     <td class="col-drink-after">${wine.drink_after || '—'}</td>
     <td class="col-drink-by">${wine.drink_by || '—'}</td>
     <td class="col-days-left wine-days"

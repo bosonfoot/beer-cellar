@@ -551,6 +551,7 @@ tr[data-imbibed] td { opacity: 0.5; }
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.875rem;
 }
+.card-grid[hidden] { display: none; }
 
 .beer-card {
   background: var(--surface);
