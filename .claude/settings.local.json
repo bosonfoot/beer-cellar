@@ -95,7 +95,23 @@
       "Bash(sqlite3 cellar.db \"SELECT id, name, label FROM beers WHERE label = 'Test' OR name LIKE '%test%' OR name LIKE '%Test%';\")",
       "Bash(grep -E \"\\\\/api\\\\/beers['\\\\`]|cellar\\\\.json\")",
       "Bash(ls *.py *.sh)",
-      "Bash(sqlite3 cellar.db \"SELECT * FROM beers WHERE name LIKE '%Broken Truck%';\")"
+      "Bash(sqlite3 cellar.db \"SELECT * FROM beers WHERE name LIKE '%Broken Truck%';\")",
+      "WebFetch(domain:www.lambic.info)",
+      "WebFetch(domain:cantillon.be)",
+      "Bash(python -c \"import db; beers = db.get_all_beers\\(\\); imbibed = [b for b in beers if b.get\\('date_imbibed'\\)]; [print\\(b['id'], b['date_imbibed'], b['name']\\) for b in imbibed[-5:]]\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:support.cellartracker.com)",
+      "WebFetch(domain:www.wine-searcher.com)",
+      "WebFetch(domain:api.wine-lister.com)",
+      "WebFetch(domain:wineapi.io)",
+      "WebFetch(domain:grapeminds.eu)",
+      "WebFetch(domain:winevybe.com)",
+      "WebFetch(domain:www.liv-ex.com)",
+      "WebFetch(domain:winelabs.ai)",
+      "Bash(python3 -m json.tool)",
+      "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\ldema\\\\OneDrive\\\\AI Workspace\\\\beer cellar\" -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)"
     ]
   }
 }

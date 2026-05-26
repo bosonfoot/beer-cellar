@@ -3,19 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beer Cellar</title>
+  <title>Lincoln's Cellar</title>
   <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
 
 <header>
   <div class="header-inner">
-    <h1>🍺 Beer Cellar</h1>
-    <span class="beer-count" id="beerCount"></span>
+    <h1>Lincoln's Cellar</h1>
+    <div class="section-tabs">
+      <button class="tab-btn tab-beer active" data-section="beer">Beer</button>
+      <button class="tab-btn tab-wine" data-section="wine">Wine</button>
+    </div>
+    <span class="cellar-count" id="cellarCount"></span>
   </div>
 </header>
 
 <main>
+
+  <!-- ── Beer section ─────────────────────────────────────────── -->
+  <div id="beerSection" class="cellar-section">
   <div class="controls">
     
     <input type="text" id="filterText" placeholder="Search by name or brewer…" autocomplete="off">
@@ -888,6 +895,64 @@
                   data-label=""></span></td>
       </tr>
       
+      <tr class="beer-row" data-id="91" data-qty="1" >
+        <td class="col-img">
+          <img class="beer-thumb"
+               src="static/images/default.svg"
+               alt="__TEST__ Edited Name"
+               onerror="this.src='/static/images/default.svg'">
+        </td>
+        <td class="beer-name">
+          __TEST__ Edited Name
+          
+        </td>
+        <td class="col-year">—</td>
+        <td class="col-brewer">__TEST__ Edited</td>
+        <td class="col-abv">—</td>
+        <td class="col-rating">—</td>
+        <td class="col-drink-after">—</td>
+        <td class="col-drink-by">—</td>
+        <td class="col-days-left"
+            data-by=""
+            data-after=""
+            data-imbibed=""
+            data-label="">—</td>
+        <td><span class="badge"
+                  data-after=""
+                  data-by=""
+                  data-imbibed=""
+                  data-label=""></span></td>
+      </tr>
+      
+      <tr class="beer-row" data-id="92" data-qty="1" >
+        <td class="col-img">
+          <img class="beer-thumb"
+               src="static/images/default.svg"
+               alt="__TEST__ Minimal Beer"
+               onerror="this.src='/static/images/default.svg'">
+        </td>
+        <td class="beer-name">
+          __TEST__ Minimal Beer
+          
+        </td>
+        <td class="col-year">—</td>
+        <td class="col-brewer">__TEST__</td>
+        <td class="col-abv">—</td>
+        <td class="col-rating">—</td>
+        <td class="col-drink-after">—</td>
+        <td class="col-drink-by">—</td>
+        <td class="col-days-left"
+            data-by=""
+            data-after=""
+            data-imbibed=""
+            data-label="">—</td>
+        <td><span class="badge"
+                  data-after=""
+                  data-by=""
+                  data-imbibed=""
+                  data-label=""></span></td>
+      </tr>
+      
       <tr class="beer-row" data-id="1" data-qty="1" data-imbibed="1">
         <td class="col-img">
           <img class="beer-thumb"
@@ -946,11 +1011,107 @@
                   data-label=""></span></td>
       </tr>
       
+      <tr class="beer-row" data-id="93" data-qty="1" data-imbibed="1">
+        <td class="col-img">
+          <img class="beer-thumb"
+               src="static/images/default.svg"
+               alt="__TEST__ Imbibe Target"
+               onerror="this.src='/static/images/default.svg'">
+        </td>
+        <td class="beer-name">
+          __TEST__ Imbibe Target
+          
+        </td>
+        <td class="col-year">—</td>
+        <td class="col-brewer">__TEST__</td>
+        <td class="col-abv">—</td>
+        <td class="col-rating">—</td>
+        <td class="col-drink-after">—</td>
+        <td class="col-drink-by">—</td>
+        <td class="col-days-left"
+            data-by=""
+            data-after=""
+            data-imbibed="2026-05-26"
+            data-label="">—</td>
+        <td><span class="badge"
+                  data-after=""
+                  data-by=""
+                  data-imbibed="2026-05-26"
+                  data-label=""></span></td>
+      </tr>
+      
     </tbody>
   </table>
   </div>
 
   <div id="cardGrid" class="card-grid" hidden></div>
+  </div><!-- /beerSection -->
+
+  <!-- ── Wine section ─────────────────────────────────────────── -->
+  <div id="wineSection" class="cellar-section" hidden>
+  <div class="controls wine-controls">
+    
+    <input type="text" id="wineFilterText" placeholder="Search by name or producer…" autocomplete="off">
+    <select id="wineFilterStatus">
+      <option value="">All statuses</option>
+      <option value="Drink Now">Drink Now</option>
+      <option value="Peak Approaching">Peak Approaching</option>
+      <option value="Aging">Aging</option>
+      <option value="Past Peak">Past Peak</option>
+      <option value="Not Set">Not Set</option>
+      <option value="Happily Imbibed">Happily Imbibed</option>
+      <option value="Test">Test</option>
+    </select>
+    <button id="wineViewToggle" class="view-toggle">
+      <span class="view-toggle-icon">⊞</span>
+      <span class="view-toggle-label">Cards</span>
+    </button>
+  </div>
+
+  <div id="wineSortControls" class="sort-controls" hidden>
+    <label for="wineCardSort">Sort by</label>
+    <select id="wineCardSort">
+      <option value="days_left">Days Left</option>
+      <option value="name">Name</option>
+      <option value="year">Vintage</option>
+      <option value="producer">Producer</option>
+      <option value="region">Region</option>
+      <option value="rating">Rating</option>
+      <option value="drink_after">Drink After</option>
+      <option value="drink_by">Drink By</option>
+    </select>
+    <button id="wineCardSortDir" class="card-sort-dir">▲</button>
+  </div>
+
+  <div class="table-wrap">
+  <table id="wineTable">
+    <thead>
+      <tr>
+        <th class="col-img"></th>
+        <th data-col="name" class="sortable wine-sortable">Wine <span class="sort-arrow"></span></th>
+        <th data-col="year" class="sortable wine-sortable">Vintage <span class="sort-arrow"></span></th>
+        <th data-col="producer" class="sortable wine-sortable">Producer <span class="sort-arrow"></span></th>
+        <th data-col="region" class="sortable wine-sortable">Region <span class="sort-arrow"></span></th>
+        <th data-col="varietal" class="sortable wine-sortable">Varietal <span class="sort-arrow"></span></th>
+        <th data-col="wine_type" class="sortable wine-sortable">Type <span class="sort-arrow"></span></th>
+        <th data-col="rating" class="sortable wine-sortable col-rating">Rating <span class="sort-arrow"></span></th>
+        <th data-col="drink_after" class="sortable wine-sortable">Drink After <span class="sort-arrow"></span></th>
+        <th data-col="drink_by" class="sortable wine-sortable">Drink By <span class="sort-arrow"></span></th>
+        <th data-col="days_left" class="sortable wine-sortable">Days Left <span class="sort-arrow"></span></th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="wineTableBody">
+      
+      <tr id="wineEmptyRow"><td colspan="12">No wines in the cellar yet.</td></tr>
+      
+    </tbody>
+  </table>
+  </div>
+
+  <div id="wineCardGrid" class="card-grid" hidden></div>
+  </div><!-- /wineSection -->
+
 </main>
 
 <!-- Detail modal -->
@@ -965,6 +1126,7 @@
 <script>
   window.CELLAR_DATA_URL = 'cellar.json';
   window.READ_ONLY = true;
+  window.CELLAR_WINES_URL = 'cellar.json';
 </script>
 <script src="static/app.js"></script>
 </body>

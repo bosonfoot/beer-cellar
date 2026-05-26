@@ -63,6 +63,26 @@ def enrich(beer):
     return beer
 
 
+def resolve_wine_image(wine):
+    """Return the URL path to the best available local image for this wine."""
+    if wine.get('image_url'):
+        rel = wine['image_url'].lstrip('/')
+        if os.path.exists(os.path.join(os.path.dirname(__file__), rel)):
+            return wine['image_url']
+
+    for ext in ('jpg', 'jpeg', 'png', 'webp'):
+        path = os.path.join(STATIC_DIR, 'images', 'wines', f"wine_{wine['id']}.{ext}")
+        if os.path.exists(path):
+            return f"/static/images/wines/wine_{wine['id']}.{ext}"
+
+    return '/static/images/default.svg'
+
+
+def enrich_wine(wine):
+    wine['image_path'] = resolve_wine_image(wine)
+    return wine
+
+
 def check_auth():
     if not session.get('authed'):
         abort(403)
@@ -82,6 +102,29 @@ def _export_and_push(commit_msg):
 
 def _delete_background(name, brewer):
     _export_and_push(f'Remove {name} ({brewer})')
+
+
+def _publish_wine_background(wine_id, data):
+    grapeminds_id = data.get('grapeminds_id')
+    vintage_year = data.get('year')
+    if grapeminds_id:
+        import research_agent_wine
+        research_agent_wine.run(
+            wine_id=wine_id,
+            grapeminds_id=grapeminds_id,
+            vintage_year=vintage_year,
+        )
+    if data.get('label') == 'Test':
+        return
+    _publish_lock.acquire()
+    try:
+        subprocess.run([sys.executable, 'export_static.py'], cwd=REPO)
+        subprocess.run(['git', 'add', '-A'], cwd=REPO)
+        subprocess.run(['git', 'commit', '--allow-empty', '-m',
+                        f'Add {data["name"]} ({data["producer"]})'], cwd=REPO)
+        subprocess.run(['git', 'push'], cwd=REPO)
+    finally:
+        _publish_lock.release()
 
 
 def _publish_background(beer_id, data):
@@ -115,7 +158,10 @@ def _publish_background(beer_id, data):
 def index():
     beers = [enrich(b) for b in db.get_all_beers()]
     brewers = sorted({b['brewer'] for b in beers})
-    return render_template('index.html', beers=beers, brewers=brewers)
+    wines = [enrich_wine(w) for w in db.get_all_wines()]
+    producers = sorted({w['producer'] for w in wines})
+    return render_template('index.html', beers=beers, brewers=brewers,
+                           wines=wines, producers=producers)
 
 
 @app.route('/api/beers')
@@ -232,6 +278,150 @@ def api_delete_beer(beer_id):
     t = threading.Thread(target=_delete_background, args=(beer['name'], beer['brewer']), daemon=True)
     t.start()
     return '', 204
+
+
+# ── Wines ─────────────────────────────────────────────────────────────────────
+
+@app.route('/api/wines')
+def api_wines():
+    return jsonify([enrich_wine(w) for w in db.get_all_wines()])
+
+
+@app.route('/api/wines/<int:wine_id>')
+def api_wine(wine_id):
+    wine = db.get_wine(wine_id)
+    if not wine:
+        abort(404)
+    return jsonify(enrich_wine(wine))
+
+
+@app.route('/api/wines', methods=['POST'])
+def api_add_wine():
+    check_auth()
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('producer'):
+        abort(400)
+    wine_id = db.insert_wine(
+        name=data['name'],
+        producer=data['producer'],
+        year=data.get('year'),
+        region=data.get('region'),
+        appellation=data.get('appellation'),
+        varietal=data.get('varietal'),
+        wine_type=data.get('wine_type'),
+        quantity=data.get('quantity', 1),
+        date_bottled=data.get('date_bottled'),
+        drink_after=data.get('drink_after'),
+        drink_by=data.get('drink_by'),
+        research=data.get('research'),
+        considerations=data.get('considerations'),
+        image_url=data.get('image_url'),
+        rating=data.get('rating'),
+        rating_source=data.get('rating_source'),
+        label=data.get('label'),
+        grapeminds_id=data.get('grapeminds_id'),
+        flavor_profile=data.get('flavor_profile'),
+    )
+    wine = enrich_wine(db.get_wine(wine_id))
+    t = threading.Thread(target=_publish_wine_background, args=(wine_id, data), daemon=True)
+    t.start()
+    return jsonify(wine), 201
+
+
+@app.route('/api/wines/<int:wine_id>', methods=['PUT'])
+def api_update_wine(wine_id):
+    check_auth()
+    wine = db.get_wine(wine_id)
+    if not wine:
+        abort(404)
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('producer'):
+        abort(400)
+    db.update_wine(
+        wine_id,
+        name=data['name'],
+        producer=data['producer'],
+        year=data.get('year'),
+        region=data.get('region'),
+        appellation=data.get('appellation'),
+        varietal=data.get('varietal'),
+        wine_type=data.get('wine_type'),
+        quantity=data.get('quantity', 1),
+        date_bottled=data.get('date_bottled'),
+        drink_after=data.get('drink_after'),
+        drink_by=data.get('drink_by'),
+        research=data.get('research'),
+        considerations=data.get('considerations'),
+        rating=data.get('rating'),
+        rating_source=data.get('rating_source'),
+        label=data.get('label'),
+    )
+    return jsonify(enrich_wine(db.get_wine(wine_id)))
+
+
+@app.route('/api/wines/<int:wine_id>/imbibe', methods=['POST'])
+def api_imbibe_wine(wine_id):
+    check_auth()
+    wine = db.get_wine(wine_id)
+    if not wine:
+        abort(404)
+    data = request.get_json() or {}
+    new_id = db.imbibe_wine(wine_id, notes=data.get('notes'))
+    active = enrich_wine(db.get_wine(wine_id))
+    result = {'wine': active}
+    if new_id:
+        result['imbibed_record'] = enrich_wine(db.get_wine(new_id))
+    if wine.get('label') != 'Test':
+        msg = f'Imbibe {wine["name"]} ({wine["producer"]})'
+        t = threading.Thread(target=_export_and_push, args=(msg,), daemon=True)
+        t.start()
+    return jsonify(result)
+
+
+@app.route('/api/wines/<int:wine_id>/research', methods=['POST'])
+def api_research_wine(wine_id):
+    check_auth()
+    wine = db.get_wine(wine_id)
+    if not wine:
+        abort(404)
+    t = threading.Thread(
+        target=_publish_wine_background,
+        args=(wine_id, {
+            'name': wine['name'],
+            'producer': wine['producer'],
+            'grapeminds_id': wine.get('grapeminds_id'),
+            'year': wine.get('year'),
+        }),
+        daemon=True,
+    )
+    t.start()
+    return jsonify({'ok': True})
+
+
+@app.route('/api/wines/<int:wine_id>', methods=['DELETE'])
+def api_delete_wine(wine_id):
+    check_auth()
+    wine = db.get_wine(wine_id)
+    if not wine:
+        abort(404)
+    db.delete_wine(wine_id)
+    t = threading.Thread(
+        target=_delete_background, args=(wine['name'], wine['producer']), daemon=True
+    )
+    t.start()
+    return '', 204
+
+
+@app.route('/api/wine-lookup')
+def api_wine_lookup():
+    check_auth()
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify([])
+    limit = int(request.args.get('limit', 10))
+    import research_agent_wine
+    results = research_agent_wine.search_wines(q, limit)
+    return jsonify(results)
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────

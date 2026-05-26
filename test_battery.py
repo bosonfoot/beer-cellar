@@ -364,6 +364,208 @@ def run_all(base_url, verbose=False):
         r = anon.delete(f'{base_url}/api/beers/{beer_id}')
         assert_eq('status', r.status_code, 403)
 
+    # ── Wines ─────────────────────────────────────────────────────────────────
+
+    created_wine_ids = []
+    wine_id = None
+
+    @test('Add wine: full payload returns 201 with all fields')
+    def _():
+        nonlocal wine_id
+        r = s.post(f'{base_url}/api/wines', json={
+            'name': '__TEST__ Brunello di Montalcino',
+            'producer': '__TEST__ Winery',
+            'year': 2017,
+            'region': 'Tuscany',
+            'varietal': 'Sangiovese',
+            'wine_type': 'red',
+            'quantity': 2,
+            'drink_after': '2025-01-01',
+            'drink_by': '2037-12-31',
+            'research': 'Test research notes.',
+            'considerations': 'Test considerations.',
+            'label': 'Test',
+        })
+        assert_eq('status', r.status_code, 201)
+        w = r.json()
+        wine_id = w['id']
+        created_wine_ids.append(wine_id)
+        assert_eq('name', w['name'], '__TEST__ Brunello di Montalcino')
+        assert_eq('producer', w['producer'], '__TEST__ Winery')
+        assert_eq('year', w['year'], 2017)
+        assert_eq('region', w['region'], 'Tuscany')
+        assert_eq('quantity', w['quantity'], 2)
+        assert_eq('drink_after', w['drink_after'], '2025-01-01')
+        assert_eq('label', w['label'], 'Test')
+
+    @test('Add wine: minimal payload (name + producer only) returns 201')
+    def _():
+        r = s.post(f'{base_url}/api/wines', json={
+            'name': '__TEST__ Minimal Wine',
+            'producer': '__TEST__ Winery',
+        })
+        assert_eq('status', r.status_code, 201)
+        created_wine_ids.append(r.json()['id'])
+
+    @test('Add wine: missing name returns 400')
+    def _():
+        r = s.post(f'{base_url}/api/wines', json={'producer': '__TEST__ Winery'})
+        assert_eq('status', r.status_code, 400)
+
+    @test('Add wine: missing producer returns 400')
+    def _():
+        r = s.post(f'{base_url}/api/wines', json={'name': '__TEST__ No Producer'})
+        assert_eq('status', r.status_code, 400)
+
+    @test('Add wine: unauthenticated POST returns 403')
+    def _():
+        r = anon.post(f'{base_url}/api/wines', json={'name': 'X', 'producer': 'Y'})
+        assert_eq('status', r.status_code, 403)
+
+    @test('Get wine: returns correct fields including tasting_history')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set (add test failed)')
+        r = s.get(f'{base_url}/api/wines/{wine_id}')
+        assert_eq('status', r.status_code, 200)
+        w = r.json()
+        assert_eq('name', w['name'], '__TEST__ Brunello di Montalcino')
+        assert_eq('tasting_history', w['tasting_history'], [])
+        assert bool(w.get('image_path')), 'image_path should be set'
+
+    @test('Get wine: unknown id returns 404')
+    def _():
+        r = s.get(f'{base_url}/api/wines/999999')
+        assert_eq('status', r.status_code, 404)
+
+    @test('Get all wines: test wines appear in list')
+    def _():
+        r = s.get(f'{base_url}/api/wines')
+        assert_eq('status', r.status_code, 200)
+        names = [w['name'] for w in r.json()]
+        assert_in('test wine in list', '__TEST__ Brunello di Montalcino', names)
+
+    @test('Edit wine: update name and producer')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = s.put(f'{base_url}/api/wines/{wine_id}', json={
+            'name': '__TEST__ Edited Wine',
+            'producer': '__TEST__ Edited Winery',
+            'quantity': 2,
+        })
+        assert_eq('status', r.status_code, 200)
+        w = r.json()
+        assert_eq('name', w['name'], '__TEST__ Edited Wine')
+        assert_eq('producer', w['producer'], '__TEST__ Edited Winery')
+
+    @test('Edit wine: unauthenticated PUT returns 403')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = anon.put(f'{base_url}/api/wines/{wine_id}', json={'name': 'X', 'producer': 'Y'})
+        assert_eq('status', r.status_code, 403)
+
+    imbibe_wine_id = None
+
+    @test('Imbibe wine (qty=1): sets date_imbibed and stores notes')
+    def _():
+        nonlocal imbibe_wine_id
+        r = s.post(f'{base_url}/api/wines', json={
+            'name': '__TEST__ Imbibe Wine',
+            'producer': '__TEST__ Winery',
+            'label': 'Test',
+        })
+        assert_eq('status', r.status_code, 201)
+        imbibe_wine_id = r.json()['id']
+        created_wine_ids.append(imbibe_wine_id)
+        r2 = s.post(f'{base_url}/api/wines/{imbibe_wine_id}/imbibe', json={'notes': 'Delicious.'})
+        assert_ok('imbibe', r2)
+        w = r2.json()['wine']
+        assert w['date_imbibed'], 'date_imbibed should be set'
+        assert_eq('notes', w['imbibe_notes'], 'Delicious.')
+        assert r2.json().get('imbibed_record') is None, 'qty=1 should not create split record'
+
+    @test('Imbibe wine (qty=2): split — original decremented, new imbibed record created')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = s.put(f'{base_url}/api/wines/{wine_id}', json={
+            'name': '__TEST__ Edited Wine',
+            'producer': '__TEST__ Edited Winery',
+            'quantity': 2,
+        })
+        assert_ok('reset qty', r)
+        r2 = s.post(f'{base_url}/api/wines/{wine_id}/imbibe', json={'notes': 'First bottle.'})
+        assert_ok('imbibe', r2)
+        data = r2.json()
+        assert data.get('imbibed_record') is not None, 'Expected imbibed_record for qty=2 split'
+        assert_eq('original qty', data['wine']['quantity'], 1)
+        imbibed = data['imbibed_record']
+        assert imbibed['date_imbibed'], 'imbibed_record should have date_imbibed'
+        assert_eq('imbibed notes', imbibed['imbibe_notes'], 'First bottle.')
+        created_wine_ids.append(imbibed['id'])
+        # Check tasting_history on original
+        r3 = s.get(f'{base_url}/api/wines/{wine_id}')
+        assert_ok('get', r3)
+        history = r3.json()['tasting_history']
+        assert len(history) == 1, f'Expected 1 tasting history entry, got {len(history)}'
+
+    @test('Research wine: POST /api/wines/{id}/research returns 200')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = s.post(f'{base_url}/api/wines/{wine_id}/research')
+        assert_eq('status', r.status_code, 200)
+        assert_in('ok', 'ok', r.json())
+
+    @test('Research wine: unauthenticated POST returns 403')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = anon.post(f'{base_url}/api/wines/{wine_id}/research')
+        assert_eq('status', r.status_code, 403)
+
+    @test('Wine lookup: search returns results for known wine')
+    def _():
+        r = s.get(f'{base_url}/api/wine-lookup?q=Boscarelli+Vino+Nobile')
+        assert_ok('lookup', r)
+        data = r.json()
+        assert len(data) > 0, 'Expected at least one result'
+        assert_in('id field', 'id', data[0])
+        assert_in('display_name field', 'display_name', data[0])
+
+    @test('Wine lookup: empty query returns empty list')
+    def _():
+        r = s.get(f'{base_url}/api/wine-lookup?q=')
+        assert_eq('status', r.status_code, 200)
+        assert_eq('empty', r.json(), [])
+
+    @test('Wine lookup: unauthenticated returns 403')
+    def _():
+        r = anon.get(f'{base_url}/api/wine-lookup?q=Boscarelli')
+        assert_eq('status', r.status_code, 403)
+
+    @test('Delete wine: removes wine and returns 204')
+    def _():
+        r = s.post(f'{base_url}/api/wines', json={
+            'name': '__TEST__ Delete Me Wine',
+            'producer': '__TEST__ Winery',
+        })
+        assert_eq('status', r.status_code, 201)
+        del_id = r.json()['id']
+        r2 = s.delete(f'{base_url}/api/wines/{del_id}')
+        assert_eq('status', r2.status_code, 204)
+        r3 = s.get(f'{base_url}/api/wines/{del_id}')
+        assert_eq('gone', r3.status_code, 404)
+
+    @test('Delete wine: unauthenticated returns 403')
+    def _():
+        if wine_id is None: raise AssertionError('wine_id not set')
+        r = anon.delete(f'{base_url}/api/wines/{wine_id}')
+        assert_eq('status', r.status_code, 403)
+
+    # Wine cleanup
+    for wid in created_wine_ids:
+        try:
+            s.delete(f'{base_url}/api/wines/{wid}')
+        except Exception:
+            pass
+
     # ── Cleanup ───────────────────────────────────────────────────────────────
 
     cleanup(s, created_ids)

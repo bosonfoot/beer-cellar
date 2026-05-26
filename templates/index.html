@@ -3,19 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beer Cellar</title>
+  <title>Lincoln's Cellar</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
 <header>
   <div class="header-inner">
-    <h1>🍺 Beer Cellar</h1>
-    <span class="beer-count" id="beerCount"></span>
+    <h1>Lincoln's Cellar</h1>
+    <div class="section-tabs">
+      <button class="tab-btn tab-beer active" data-section="beer">Beer</button>
+      <button class="tab-btn tab-wine" data-section="wine">Wine</button>
+    </div>
+    <span class="cellar-count" id="cellarCount"></span>
   </div>
 </header>
 
 <main>
+
+  <!-- ── Beer section ─────────────────────────────────────────── -->
+  <div id="beerSection" class="cellar-section">
   <div class="controls">
     {% if not read_only %}
     <button id="addBeerBtn" class="btn-add-beer">+ Add Beer</button>
@@ -108,6 +115,108 @@
   </div>
 
   <div id="cardGrid" class="card-grid" hidden></div>
+  </div><!-- /beerSection -->
+
+  <!-- ── Wine section ─────────────────────────────────────────── -->
+  <div id="wineSection" class="cellar-section" hidden>
+  <div class="controls wine-controls">
+    {% if not read_only %}
+    <button id="addWineBtn" class="btn-add-beer">+ Add Wine</button>
+    {% endif %}
+    <input type="text" id="wineFilterText" placeholder="Search by name or producer…" autocomplete="off">
+    <select id="wineFilterStatus">
+      <option value="">All statuses</option>
+      <option value="Drink Now">Drink Now</option>
+      <option value="Peak Approaching">Peak Approaching</option>
+      <option value="Aging">Aging</option>
+      <option value="Past Peak">Past Peak</option>
+      <option value="Not Set">Not Set</option>
+      <option value="Happily Imbibed">Happily Imbibed</option>
+      <option value="Test">Test</option>
+    </select>
+    <button id="wineViewToggle" class="view-toggle">
+      <span class="view-toggle-icon">⊞</span>
+      <span class="view-toggle-label">Cards</span>
+    </button>
+  </div>
+
+  <div id="wineSortControls" class="sort-controls" hidden>
+    <label for="wineCardSort">Sort by</label>
+    <select id="wineCardSort">
+      <option value="days_left">Days Left</option>
+      <option value="name">Name</option>
+      <option value="year">Vintage</option>
+      <option value="producer">Producer</option>
+      <option value="region">Region</option>
+      <option value="rating">Rating</option>
+      <option value="drink_after">Drink After</option>
+      <option value="drink_by">Drink By</option>
+    </select>
+    <button id="wineCardSortDir" class="card-sort-dir">▲</button>
+  </div>
+
+  <div class="table-wrap">
+  <table id="wineTable">
+    <thead>
+      <tr>
+        <th class="col-img"></th>
+        <th data-col="name" class="sortable wine-sortable">Wine <span class="sort-arrow"></span></th>
+        <th data-col="year" class="sortable wine-sortable">Vintage <span class="sort-arrow"></span></th>
+        <th data-col="producer" class="sortable wine-sortable">Producer <span class="sort-arrow"></span></th>
+        <th data-col="region" class="sortable wine-sortable">Region <span class="sort-arrow"></span></th>
+        <th data-col="varietal" class="sortable wine-sortable">Varietal <span class="sort-arrow"></span></th>
+        <th data-col="wine_type" class="sortable wine-sortable">Type <span class="sort-arrow"></span></th>
+        <th data-col="rating" class="sortable wine-sortable col-rating">Rating <span class="sort-arrow"></span></th>
+        <th data-col="drink_after" class="sortable wine-sortable">Drink After <span class="sort-arrow"></span></th>
+        <th data-col="drink_by" class="sortable wine-sortable">Drink By <span class="sort-arrow"></span></th>
+        <th data-col="days_left" class="sortable wine-sortable">Days Left <span class="sort-arrow"></span></th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="wineTableBody">
+      {% for wine in wines %}
+      <tr class="wine-row" data-id="{{ wine.id }}" data-qty="{{ wine.quantity or 1 }}" {% if wine.date_imbibed %}data-imbibed="1"{% endif %}>
+        <td class="col-img">
+          <img class="beer-thumb"
+               src="{{ wine.image_path }}"
+               alt="{{ wine.name }}"
+               onerror="this.src='/static/images/default.svg'">
+        </td>
+        <td class="beer-name">
+          {{ wine.name }}
+          {% if wine.quantity and wine.quantity > 1 %}
+          <span class="qty-badge">×{{ wine.quantity }}</span>
+          {% endif %}
+        </td>
+        <td class="col-year">{{ wine.year or '—' }}</td>
+        <td class="col-brewer">{{ wine.producer }}</td>
+        <td class="col-region">{{ wine.region or '—' }}</td>
+        <td class="col-varietal">{{ wine.varietal or '—' }}</td>
+        <td class="col-wine-type">{{ wine.wine_type or '—' }}</td>
+        <td class="col-rating">{{ ('%.0f' % wine.rating) if wine.rating is not none else '—' }}</td>
+        <td class="col-drink-after">{{ wine.drink_after or '—' }}</td>
+        <td class="col-drink-by">{{ wine.drink_by or '—' }}</td>
+        <td class="col-days-left wine-days"
+            data-by="{{ wine.drink_by or '' }}"
+            data-after="{{ wine.drink_after or '' }}"
+            data-imbibed="{{ wine.date_imbibed or '' }}"
+            data-label="{{ wine.label or '' }}">—</td>
+        <td><span class="badge wine-badge"
+                  data-after="{{ wine.drink_after or '' }}"
+                  data-by="{{ wine.drink_by or '' }}"
+                  data-imbibed="{{ wine.date_imbibed or '' }}"
+                  data-label="{{ wine.label or '' }}"></span></td>
+      </tr>
+      {% else %}
+      <tr id="wineEmptyRow"><td colspan="12">No wines in the cellar yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div id="wineCardGrid" class="card-grid" hidden></div>
+  </div><!-- /wineSection -->
+
 </main>
 
 <!-- Detail modal -->
@@ -120,9 +229,11 @@
 
 {% if not read_only %}
 <script>window.CELLAR_BREWERS = {{ brewers | tojson }};</script>
+<script>window.CELLAR_PRODUCERS = {{ producers | tojson }};</script>
 {% endif %}
 <script>
   window.CELLAR_DATA_URL = window.CELLAR_DATA_URL || '/api/beers';
+  window.CELLAR_WINES_URL = window.CELLAR_WINES_URL || '/api/wines';
 </script>
 <script src="/static/app.js"></script>
 </body>

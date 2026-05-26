@@ -46,7 +46,8 @@ const STATUS_CLASS = {
 };
 
 function applyBadges() {
-  document.querySelectorAll('.badge[data-after]').forEach(el => {
+  // Beer badges only — wine badges are handled by applyWineBadges()
+  document.querySelectorAll('.badge[data-after]:not(.wine-badge)').forEach(el => {
     const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
     el.textContent = status;
     el.className = 'badge ' + (STATUS_CLASS[status] || 'badge-unknown');
@@ -206,7 +207,7 @@ function applyFilters() {
     const matchStatus = !status || rowStatus === status;
 
     row.style.display = matchText && matchStatus ? '' : 'none';
-    if (matchText && matchStatus) {
+    if (matchText && matchStatus && !row.dataset.imbibed) {
       visible++;
       bottles += parseInt(row.dataset.qty || 1);
     }
@@ -220,21 +221,47 @@ function applyFilters() {
   updateCount(visible, bottles);
 }
 
-// ── Beer count ────────────────────────────────────────────────────────────────
+// ── Cellar count ──────────────────────────────────────────────────────────────
+
+let _beerCountN = 0, _beerCountBottles = 0;
+let _wineCountN = 0, _wineCountBottles = 0;
+
+function renderCellarCount() {
+  const el = document.getElementById('cellarCount');
+  if (!el) return;
+  const bStr = `${_beerCountN} ${_beerCountN === 1 ? 'beer' : 'beers'} (${_beerCountBottles} ${_beerCountBottles === 1 ? 'bottle' : 'bottles'})`;
+  const wStr = `${_wineCountN} ${_wineCountN === 1 ? 'wine' : 'wines'} (${_wineCountBottles} ${_wineCountBottles === 1 ? 'bottle' : 'bottles'})`;
+  el.textContent = `${bStr} · ${wStr}`;
+}
 
 function updateCount(n, bottles) {
-  const el = document.getElementById('beerCount');
-  if (!el) return;
-  const beerStr = n === 1 ? '1 beer' : `${n} beers`;
-  const bottleStr = bottles === 1 ? '1 bottle' : `${bottles} bottles`;
-  el.textContent = `${beerStr}, ${bottleStr}`;
+  _beerCountN = n;
+  _beerCountBottles = bottles;
+  renderCellarCount();
+}
+
+function updateWineCount(n, bottles) {
+  _wineCountN = n;
+  _wineCountBottles = bottles;
+  renderCellarCount();
 }
 
 function initCount() {
-  const rows = document.querySelectorAll('tr.beer-row');
-  let bottles = 0;
-  rows.forEach(r => { bottles += parseInt(r.dataset.qty || 1); });
-  updateCount(rows.length, bottles);
+  // Beers
+  const bRows = document.querySelectorAll('tr.beer-row:not([data-imbibed])');
+  let bBottles = 0;
+  bRows.forEach(r => { bBottles += parseInt(r.dataset.qty || 1); });
+  _beerCountN = bRows.length;
+  _beerCountBottles = bBottles;
+
+  // Wines
+  const wRows = document.querySelectorAll('tr.wine-row:not([data-imbibed])');
+  let wBottles = 0;
+  wRows.forEach(r => { wBottles += parseInt(r.dataset.qty || 1); });
+  _wineCountN = wRows.length;
+  _wineCountBottles = wBottles;
+
+  renderCellarCount();
 }
 
 // ── Detail modal ──────────────────────────────────────────────────────────────
@@ -409,16 +436,33 @@ function esc(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function fetchBeer(id) {
+  if (window.READ_ONLY) {
+    return fetch(window.CELLAR_DATA_URL)
+      .then(r => r.json())
+      .then(data => (data.beers || data).find(b => b.id == id));
+  }
+  return fetch(`/api/beers/${id}`).then(r => r.json());
+}
+
+function fetchWine(id) {
+  if (window.READ_ONLY) {
+    return fetch(window.CELLAR_WINES_URL)
+      .then(r => r.json())
+      .then(data => (data.wines || data).find(w => w.id == id));
+  }
+  return fetch(`/api/wines/${id}`).then(r => r.json());
+}
+
 function openModal(beerId) {
-  fetch(`cellar.json`).then(r=>r.json()).then(beers=>beers.find(b=>b.id==beerId))
-    .then(beer => {
-      document.getElementById('modalContent').innerHTML = renderModal(beer);
-      document.getElementById('modal').removeAttribute('hidden');
-      setupImbibeButton(beer.id);
-      setupDeleteButton(beer.id);
-      setupEditButton(beer);
-      setupReresearchButton(beer);
-    });
+  fetchBeer(beerId).then(beer => {
+    document.getElementById('modalContent').innerHTML = renderModal(beer);
+    document.getElementById('modal').removeAttribute('hidden');
+    setupImbibeButton(beer.id);
+    setupDeleteButton(beer.id);
+    setupEditButton(beer);
+    setupReresearchButton(beer);
+  });
 }
 
 function setupImbibeButton(beerId) {
@@ -652,6 +696,9 @@ function setupModal() {
   });
   document.querySelectorAll('tr.beer-row').forEach(row => {
     row.addEventListener('click', () => openModal(row.dataset.id));
+  });
+  document.querySelectorAll('tr.wine-row').forEach(row => {
+    row.addEventListener('click', () => openWineModal(row.dataset.id));
   });
 }
 
@@ -1254,5 +1301,977 @@ function injectNewBeerRow(beer) {
   overlay.addEventListener('click', e => { if (e.target === overlay) closeAddBeer(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeAddBeer();
+  });
+})();
+
+// ════════════════════════════════════════════════════════════════════════════
+// WINE SECTION
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── Wine status logic ─────────────────────────────────────────────────────────
+
+const WINE_STATUS_CLASS = {
+  'Drink Now':        'badge-drink-now',
+  'Peak Approaching': 'badge-approaching',
+  'Aging':            'badge-aging',
+  'Past Peak':        'badge-past-peak',
+  'Not Set':          'badge-not-set',
+  'Happily Imbibed':  'badge-imbibed',
+  'Test':             'badge-test',
+};
+
+function getWineStatus(drinkAfter, drinkBy, imbibed, label) {
+  if (label) return label;
+  if (imbibed) return 'Happily Imbibed';
+  const today = new Date().toISOString().slice(0, 10);
+  if (!drinkAfter && !drinkBy) return 'Not Set';
+  if (drinkBy && today > drinkBy) return 'Past Peak';
+  if (drinkAfter && today >= drinkAfter) return 'Drink Now';
+  if (drinkAfter) {
+    return daysLeft(drinkAfter) <= 60 ? 'Peak Approaching' : 'Aging';
+  }
+  return 'Not Set';
+}
+
+function applyWineBadges() {
+  document.querySelectorAll('.wine-badge[data-after]').forEach(el => {
+    const status = getWineStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
+    el.textContent = status;
+    el.className = 'badge wine-badge ' + (WINE_STATUS_CLASS[status] || 'badge-not-set');
+  });
+  document.querySelectorAll('td.wine-days').forEach(td => {
+    const DAY_CLASSES = ['days-drink-now', 'days-approaching', 'days-aging', 'days-soon', 'days-urgent'];
+    DAY_CLASSES.forEach(c => td.classList.remove(c));
+    const status = getWineStatus(td.dataset.after, td.dataset.by, td.dataset.imbibed, td.dataset.label);
+    if (status === 'Drink Now') {
+      const d = daysLeft(td.dataset.by);
+      if (d !== null) {
+        td.textContent = d;
+        td.dataset.sortVal = d;
+        td.classList.add('days-drink-now');
+        if (d <= 30) td.classList.add('days-urgent');
+        else if (d <= 90) td.classList.add('days-soon');
+      }
+    } else if (status === 'Peak Approaching') {
+      const d = daysLeft(td.dataset.after);
+      if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-approaching'); }
+    } else if (status === 'Aging') {
+      const d = daysLeft(td.dataset.after);
+      if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-aging'); }
+    } else {
+      td.textContent = '—';
+      td.dataset.sortVal = '';
+    }
+  });
+}
+
+// ── Wine sorting ──────────────────────────────────────────────────────────────
+
+let wineSortCol = 'days_left';
+let wineSortDir = 1;
+const WINE_NUMERIC_COLS = new Set(['year', 'rating', 'days_left']);
+
+function wineCellValue(row, col) {
+  if (col === 'days_left') {
+    const td = row.querySelector('td.wine-days');
+    return td ? td.dataset.sortVal || '' : '';
+  }
+  const cells = row.querySelectorAll('td');
+  const colIndex = { name: 1, year: 2, producer: 3, region: 4, varietal: 5, wine_type: 6, rating: 7, drink_after: 8, drink_by: 9 };
+  const idx = colIndex[col];
+  if (idx === undefined) return '';
+  const text = cells[idx].textContent.trim();
+  return text === '—' ? '' : text;
+}
+
+function sortWineTable() {
+  const tbody = document.getElementById('wineTableBody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr.wine-row'));
+  rows.sort((a, b) => {
+    const ai = a.dataset.imbibed ? 1 : 0;
+    const bi = b.dataset.imbibed ? 1 : 0;
+    if (ai !== bi) return ai - bi;
+    if (wineSortCol === 'days_left') {
+      const ra = STATUS_SORT_RANK[a.querySelector('.wine-badge')?.textContent] ?? 3;
+      const rb = STATUS_SORT_RANK[b.querySelector('.wine-badge')?.textContent] ?? 3;
+      if (ra !== rb) return ra - rb;
+    }
+    const av = wineCellValue(a, wineSortCol);
+    const bv = wineCellValue(b, wineSortCol);
+    if (av === '' && bv === '') return 0;
+    if (av === '') return 1;
+    if (bv === '') return -1;
+    if (WINE_NUMERIC_COLS.has(wineSortCol)) {
+      return (parseFloat(av) - parseFloat(bv)) * wineSortDir;
+    }
+    return av.localeCompare(bv) * wineSortDir;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+  if (document.getElementById('wineCardGrid')) syncWineCards();
+}
+
+function setupWineSort() {
+  document.querySelectorAll('th.wine-sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (wineSortCol === col) { wineSortDir *= -1; } else { wineSortCol = col; wineSortDir = 1; }
+      updateWineSortIndicators();
+      sortWineTable();
+    });
+  });
+}
+
+function updateWineSortIndicators() {
+  document.querySelectorAll('th.wine-sortable').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.col === wineSortCol) {
+      th.classList.add(wineSortDir === 1 ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+// ── Wine filtering ────────────────────────────────────────────────────────────
+
+function setupWineFilter() {
+  document.getElementById('wineFilterText')?.addEventListener('input', applyWineFilters);
+  document.getElementById('wineFilterStatus')?.addEventListener('change', applyWineFilters);
+}
+
+function applyWineFilters() {
+  const textEl = document.getElementById('wineFilterText');
+  const statusEl = document.getElementById('wineFilterStatus');
+  const text = textEl ? textEl.value.toLowerCase() : '';
+  const status = statusEl ? statusEl.value : '';
+  let visible = 0, bottles = 0;
+  document.querySelectorAll('tr.wine-row').forEach(row => {
+    const name = row.querySelector('td.beer-name')?.textContent.toLowerCase() || '';
+    const producer = row.querySelector('td.col-brewer')?.textContent.toLowerCase() || '';
+    const rowStatus = row.querySelector('.wine-badge')?.textContent || '';
+    const matchText = !text || name.includes(text) || producer.includes(text);
+    const matchStatus = !status || rowStatus === status;
+    row.style.display = matchText && matchStatus ? '' : 'none';
+    if (matchText && matchStatus && !row.dataset.imbibed) {
+      visible++;
+      bottles += parseInt(row.dataset.qty || 1);
+    }
+  });
+  document.querySelectorAll('.wine-card').forEach(card => {
+    const row = document.querySelector(`tr.wine-row[data-id="${card.dataset.id}"]`);
+    if (row) card.style.display = row.style.display;
+  });
+  updateWineCount(visible, bottles);
+}
+
+// ── Wine card view ────────────────────────────────────────────────────────────
+
+function syncWineCards() {
+  const grid = document.getElementById('wineCardGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  document.querySelectorAll('tr.wine-row').forEach(row => {
+    const id = row.dataset.id;
+    const img = row.querySelector('td.col-img img');
+    const nameTd = row.querySelector('td.beer-name');
+    const producer = row.querySelector('td.col-brewer')?.textContent.trim() || '';
+    const year = row.querySelector('td.col-year')?.textContent.trim() || '';
+    const wineType = row.querySelector('td.col-wine-type')?.textContent.trim() || '';
+    const rating = row.querySelector('td.col-rating')?.textContent.trim() || '';
+    const daysTd = row.querySelector('td.wine-days');
+    const badgeEl = row.querySelector('.wine-badge');
+
+    const card = document.createElement('div');
+    card.className = 'beer-card wine-card';
+    card.dataset.id = id;
+    if (row.dataset.imbibed) card.dataset.imbibed = row.dataset.imbibed;
+    card.style.display = row.style.display;
+
+    const metaParts = [];
+    if (year && year !== '—') metaParts.push(`<span>${year}</span>`);
+    if (wineType && wineType !== '—') metaParts.push(`<span>${wineType}</span>`);
+    if (rating && rating !== '—') metaParts.push(`<span class="card-rating">${rating}</span>`);
+
+    card.innerHTML = `
+      <div class="card-img-wrap">
+        <img class="card-thumb" src="${img ? img.src : '/static/images/default.svg'}" alt=""
+             onerror="this.src='/static/images/default.svg'">
+      </div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-name">${nameTd ? nameTd.innerHTML : ''}</div>
+          <div class="card-brewer">${esc(producer)}</div>
+        </div>
+        ${metaParts.length ? `<div class="card-meta">${metaParts.join('<span class="card-sep">·</span>')}</div>` : ''}
+        <div class="card-window">
+          <span class="card-days"
+                data-by="${daysTd ? daysTd.dataset.by : ''}"
+                data-after="${daysTd ? daysTd.dataset.after : ''}"
+                data-imbibed="${daysTd ? daysTd.dataset.imbibed : ''}"></span>
+          <span class="badge wine-badge ${badgeEl ? badgeEl.className.replace('badge wine-badge ', '') : ''}"
+                data-after="${badgeEl ? badgeEl.dataset.after : ''}"
+                data-by="${badgeEl ? badgeEl.dataset.by : ''}"
+                data-imbibed="${badgeEl ? badgeEl.dataset.imbibed : ''}">${badgeEl ? badgeEl.textContent : ''}</span>
+        </div>
+      </div>`;
+
+    const cardDays = card.querySelector('span.card-days');
+    if (daysTd) {
+      cardDays.textContent = daysTd.textContent;
+      daysTd.classList.forEach(c => { if (c.startsWith('days-')) cardDays.classList.add(c); });
+    }
+    const d = parseInt(daysTd?.textContent, 10);
+    if (!isNaN(d) && badgeEl) {
+      const cardBadge = card.querySelector('.wine-badge');
+      const dw = d === 1 ? 'day' : 'days';
+      const status = badgeEl.textContent;
+      if (status === 'Drink Now')        cardBadge.textContent = `Drink within ${d} ${dw}`;
+      else if (status === 'Peak Approaching') cardBadge.textContent = `Peak in ${d} ${dw}`;
+      else if (status === 'Aging')       cardBadge.textContent = `Ready in ${d} ${dw}`;
+    }
+    cardDays.hidden = true;
+
+    card.addEventListener('click', () => openWineModal(id));
+    grid.appendChild(card);
+  });
+}
+
+// ── Wine view toggle ──────────────────────────────────────────────────────────
+
+const WINE_CARD_VIEW_KEY = 'cellar-wine-view';
+
+function getWinePreferredView() {
+  return localStorage.getItem(WINE_CARD_VIEW_KEY)
+    || (window.matchMedia('(max-width: 640px)').matches ? 'card' : 'table');
+}
+
+function setWineView(view) {
+  const tableWrap = document.querySelector('#wineSection .table-wrap');
+  const cardGrid = document.getElementById('wineCardGrid');
+  const sortControls = document.getElementById('wineSortControls');
+  if (tableWrap) tableWrap.hidden = (view === 'card');
+  if (cardGrid) cardGrid.hidden = (view === 'table');
+  if (sortControls) sortControls.hidden = (view === 'table');
+  const lbl = document.querySelector('#wineViewToggle .view-toggle-label');
+  const icon = document.querySelector('#wineViewToggle .view-toggle-icon');
+  if (lbl) lbl.textContent = view === 'card' ? 'Table' : 'Cards';
+  if (icon) icon.textContent = view === 'card' ? '☰' : '⊞';
+  localStorage.setItem(WINE_CARD_VIEW_KEY, view);
+}
+
+function setupWineViewToggle() {
+  const btn = document.getElementById('wineViewToggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const current = localStorage.getItem(WINE_CARD_VIEW_KEY) || getWinePreferredView();
+    const next = current === 'card' ? 'table' : 'card';
+    if (next === 'card') syncWineCards();
+    setWineView(next);
+  });
+}
+
+function setupWineCardSort() {
+  const sel = document.getElementById('wineCardSort');
+  const dirBtn = document.getElementById('wineCardSortDir');
+  if (!sel || !dirBtn) return;
+  sel.value = wineSortCol;
+  sel.addEventListener('change', () => {
+    wineSortCol = sel.value;
+    wineSortDir = 1;
+    dirBtn.textContent = '▲';
+    updateWineSortIndicators();
+    sortWineTable();
+  });
+  dirBtn.addEventListener('click', () => {
+    wineSortDir *= -1;
+    dirBtn.textContent = wineSortDir === 1 ? '▲' : '▼';
+    updateWineSortIndicators();
+    sortWineTable();
+  });
+}
+
+// ── Wine modal ────────────────────────────────────────────────────────────────
+
+function renderWineModal(wine) {
+  const status = getWineStatus(wine.drink_after, wine.drink_by, wine.date_imbibed, wine.label);
+  const badgeClass = WINE_STATUS_CLASS[status] || 'badge-not-set';
+  const imgSrc = wine.image_path || '/static/images/default.svg';
+
+  let fp = null;
+  try { fp = wine.flavor_profile ? JSON.parse(wine.flavor_profile) : null; } catch (e) {}
+
+  let html = `
+    <div class="modal-header">
+      <img class="modal-label-img"
+           src="${imgSrc}"
+           alt="${esc(wine.name)}"
+           onerror="this.src='/static/images/default.svg'">
+      <div class="modal-header-text">
+        <div class="modal-beer-name">${esc(wine.name)}</div>
+        <div class="modal-brewer">${esc(wine.producer)}</div>
+      </div>
+    </div>
+
+    <div class="modal-window">
+      <div>
+        <div class="modal-window-label">Drinking window</div>
+        <div class="modal-window-value">${drinkWindowText(wine)}</div>
+      </div>
+      <span class="badge wine-badge ${badgeClass}" style="margin-left:auto">${status}</span>
+    </div>
+
+    <div class="modal-dates">
+      ${wine.year ? `<div class="modal-date-item"><div class="modal-date-label">Vintage</div><div class="modal-date-value">${wine.year}</div></div>` : ''}
+      ${wine.producer ? `<div class="modal-date-item"><div class="modal-date-label">Producer</div><div class="modal-date-value">${esc(wine.producer)}</div></div>` : ''}
+      ${wine.region ? `<div class="modal-date-item"><div class="modal-date-label">Region</div><div class="modal-date-value">${esc(wine.region)}</div></div>` : ''}
+      ${wine.varietal ? `<div class="modal-date-item"><div class="modal-date-label">Varietal</div><div class="modal-date-value">${esc(wine.varietal)}</div></div>` : ''}
+      ${wine.wine_type ? `<div class="modal-date-item"><div class="modal-date-label">Type</div><div class="modal-date-value">${esc(wine.wine_type)}</div></div>` : ''}
+      ${wine.rating != null ? `<div class="modal-date-item"><div class="modal-date-label">Rating</div><div class="modal-date-value">${Math.round(wine.rating)}${wine.rating_source ? ` <span style="font-size:0.8em;color:var(--text-muted)">(${esc(wine.rating_source)})</span>` : ''}</div></div>` : ''}
+      <div class="modal-date-item"><div class="modal-date-label">Drink After</div><div class="modal-date-value">${formatDate(wine.drink_after)}</div></div>
+      <div class="modal-date-item"><div class="modal-date-label">Drink By</div><div class="modal-date-value">${formatDate(wine.drink_by)}</div></div>
+      <div class="modal-date-item"><div class="modal-date-label">Added</div><div class="modal-date-value">${formatDate(wine.date_added)}</div></div>
+      ${wine.quantity > 1 ? `<div class="modal-date-item"><div class="modal-date-label">Bottles</div><div class="modal-date-value">${wine.quantity}</div></div>` : ''}
+      ${wine.date_imbibed ? `<div class="modal-date-item"><div class="modal-date-label">Imbibed</div><div class="modal-date-value">${formatDate(wine.date_imbibed)}</div></div>` : ''}
+    </div>`;
+
+  if (fp && Object.keys(fp).length) {
+    const labels = { sweetness: 'Sweetness', acidity: 'Acidity', tannins: 'Tannins', alcohol: 'Alcohol', body: 'Body', finish: 'Finish' };
+    const scores = Object.entries(fp).filter(([k, v]) => labels[k] && v != null)
+      .map(([k, v]) => `<span>${labels[k]} ${v}</span>`).join('');
+    if (scores) {
+      html += `<div class="modal-section"><div class="modal-section-title">Flavor Profile</div><div class="flavor-profile">${scores}</div></div>`;
+    }
+  }
+
+  if (wine.date_imbibed && wine.imbibe_notes) {
+    html += `<div class="modal-section"><div class="modal-section-title">Tasting Notes</div><div class="modal-section-body">${esc(wine.imbibe_notes)}</div></div>`;
+  }
+
+  if (!wine.date_imbibed && !window.READ_ONLY) {
+    html += `
+      <div class="modal-imbibe" id="wineImbibeSection">
+        <button class="btn-imbibe" id="wineImbibeBtn">IMBIBE!</button>
+        <div class="imbibe-confirm" id="wineImbibeConfirm" hidden>
+          <textarea id="wineImbibeNotes" class="imbibe-notes" placeholder="Tasting notes (optional)…" rows="3"></textarea>
+          <div class="imbibe-actions">
+            <button class="btn-imbibe-confirm" id="wineImbibeConfirmBtn">Confirm</button>
+            <button class="btn-imbibe-cancel" id="wineImbibeCancelBtn">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (wine.tasting_history && wine.tasting_history.length > 0) {
+    html += `<div class="modal-section"><div class="modal-section-title">Previous Tastings</div>`;
+    for (const t of wine.tasting_history) {
+      html += `<div class="tasting-entry"><div class="tasting-date">${formatDate(t.date_imbibed)}</div>${t.imbibe_notes ? `<div class="tasting-entry-notes">${esc(t.imbibe_notes)}</div>` : ''}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (wine.research) {
+    html += `<div class="modal-section"><div class="modal-section-title">Drinking Window Notes</div><div class="modal-section-body">${autoLink(esc(wine.research))}</div></div>`;
+  }
+  if (wine.considerations) {
+    html += `<div class="modal-section"><div class="modal-section-title">Cellaring Notes</div><div class="modal-section-body">${esc(wine.considerations)}</div></div>`;
+  }
+
+  if (!window.READ_ONLY) {
+    html += `
+      <div class="modal-delete-row">
+        <button class="btn-modal-edit" id="editWineBtn">Edit</button>
+        <button class="btn-modal-reresearch" id="wineReresearchBtn">Re-research</button>
+        <button class="btn-delete-beer" id="deleteWineBtn" data-id="${wine.id}">Delete</button>
+      </div>`;
+  }
+
+  return html;
+}
+
+function openWineModal(wineId) {
+  fetchWine(wineId).then(wine => {
+    document.getElementById('modalContent').innerHTML = renderWineModal(wine);
+    document.getElementById('modal').removeAttribute('hidden');
+    setupWineImbibeButton(wine.id);
+    setupWineDeleteButton(wine.id);
+    setupWineEditButton(wine);
+    setupWineReresearchButton(wine);
+  });
+}
+
+function setupWineImbibeButton(wineId) {
+  const btn = document.getElementById('wineImbibeBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    document.getElementById('wineImbibeConfirm').removeAttribute('hidden');
+    btn.setAttribute('hidden', '');
+    document.getElementById('wineImbibeNotes').focus();
+  });
+  document.getElementById('wineImbibeCancelBtn').addEventListener('click', () => {
+    document.getElementById('wineImbibeConfirm').setAttribute('hidden', '');
+    btn.removeAttribute('hidden');
+  });
+  document.getElementById('wineImbibeConfirmBtn').addEventListener('click', () => {
+    const notes = document.getElementById('wineImbibeNotes').value.trim();
+    fetch(`/api/wines/${wineId}/imbibe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: notes || null }),
+    }).then(r => r.json()).then(data => {
+      const wine = data.wine;
+      const imbibedRecord = data.imbibed_record;
+      if (imbibedRecord) {
+        const row = document.querySelector(`tr.wine-row[data-id="${wineId}"]`);
+        if (row) {
+          const nameCell = row.querySelector('.beer-name');
+          const badge = nameCell?.querySelector('.qty-badge');
+          if (wine.quantity > 1) { if (badge) badge.textContent = `×${wine.quantity}`; }
+          else if (badge) badge.remove();
+          row.dataset.qty = wine.quantity;
+        }
+        injectNewWineRow(imbibedRecord);
+        document.getElementById('modalContent').innerHTML = renderWineModal(wine);
+        setupWineImbibeButton(wine.id);
+        setupWineDeleteButton(wine.id);
+        setupWineEditButton(wine);
+        setupWineReresearchButton(wine);
+      } else {
+        const row = document.querySelector(`tr.wine-row[data-id="${wineId}"]`);
+        if (row) {
+          row.dataset.imbibed = '1';
+          row.querySelectorAll('td.wine-days, .wine-badge').forEach(el => { el.dataset.imbibed = '1'; });
+          applyWineBadges();
+          sortWineTable();
+        }
+        const card = document.querySelector(`.wine-card[data-id="${wineId}"]`);
+        if (card) card.dataset.imbibed = '1';
+        syncWineCards();
+        document.getElementById('modalContent').innerHTML = renderWineModal(wine);
+      }
+      initCount();
+    });
+  });
+}
+
+function setupWineDeleteButton(wineId) {
+  const btn = document.getElementById('deleteWineBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!confirm('Delete this wine from the cellar?')) return;
+    fetch(`/api/wines/${wineId}`, { method: 'DELETE' }).then(r => {
+      if (!r.ok) return;
+      closeModal();
+      document.querySelector(`tr.wine-row[data-id="${wineId}"]`)?.remove();
+      document.querySelector(`.wine-card[data-id="${wineId}"]`)?.remove();
+      initCount();
+    });
+  });
+}
+
+function setupWineEditButton(wine) {
+  const btn = document.getElementById('editWineBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => renderWineEditForm(wine));
+}
+
+function renderWineEditForm(wine) {
+  const producerList = (window.CELLAR_PRODUCERS || []).map(p => `<option value="${esc(p)}">`).join('');
+  document.getElementById('modalContent').innerHTML = `
+    <datalist id="editProducerList">${producerList}</datalist>
+    <div class="edit-beer-form">
+      <label>Wine name</label>
+      <input class="add-field" id="wef-name" value="${esc(wine.name || '')}">
+      <label>Producer</label>
+      <input class="add-field" id="wef-producer" value="${esc(wine.producer || '')}" list="editProducerList">
+      <label>Vintage</label>
+      <input class="add-field" id="wef-year" type="number" min="1900" max="2100" value="${wine.year || ''}">
+      <label>Region</label>
+      <input class="add-field" id="wef-region" value="${esc(wine.region || '')}">
+      <label>Varietal</label>
+      <input class="add-field" id="wef-varietal" value="${esc(wine.varietal || '')}">
+      <label>Type</label>
+      <select class="add-field" id="wef-wine-type">
+        <option value="">—</option>
+        ${['red','white','rosé','sparkling','dessert'].map(t => `<option value="${t}" ${wine.wine_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+      <label>Rating</label>
+      <input class="add-field" id="wef-rating" type="number" min="0" max="100" value="${wine.rating != null ? wine.rating : ''}">
+      <label>Rating source</label>
+      <input class="add-field" id="wef-rating-source" placeholder="e.g. Wine Spectator" value="${esc(wine.rating_source || '')}">
+      <label>Quantity</label>
+      <input class="add-field" id="wef-qty" type="number" min="1" value="${wine.quantity || 1}">
+      <label>Drink after</label>
+      <input class="add-field" id="wef-drink-after" placeholder="YYYY-MM-DD" value="${wine.drink_after || ''}">
+      <label>Drink by</label>
+      <input class="add-field" id="wef-drink-by" placeholder="YYYY-MM-DD" value="${wine.drink_by || ''}">
+      <label>Window notes</label>
+      <textarea class="add-field" id="wef-research" rows="4">${esc(wine.research || '')}</textarea>
+      <label>Cellaring notes</label>
+      <textarea class="add-field" id="wef-considerations" rows="3">${esc(wine.considerations || '')}</textarea>
+      <label>Label</label>
+      <input class="add-field" id="wef-label" placeholder="e.g. Test" value="${esc(wine.label || '')}">
+    </div>
+    <div id="wineEditError" class="add-beer-error" hidden></div>
+    <div class="modal-delete-row" style="margin-top:1rem">
+      <button class="btn-secondary" id="wineEditCancelBtn">Cancel</button>
+      <button class="btn-primary" id="wineEditSaveBtn">Save</button>
+    </div>`;
+
+  document.getElementById('wineEditCancelBtn').addEventListener('click', () => openWineModal(wine.id));
+  document.getElementById('wineEditSaveBtn').addEventListener('click', () => {
+    const payload = {
+      name:          document.getElementById('wef-name').value.trim(),
+      producer:      document.getElementById('wef-producer').value.trim(),
+      year:          parseInt(document.getElementById('wef-year').value) || null,
+      region:        document.getElementById('wef-region').value.trim() || null,
+      varietal:      document.getElementById('wef-varietal').value.trim() || null,
+      wine_type:     document.getElementById('wef-wine-type').value || null,
+      rating:        parseFloat(document.getElementById('wef-rating').value) || null,
+      rating_source: document.getElementById('wef-rating-source').value.trim() || null,
+      quantity:      parseInt(document.getElementById('wef-qty').value) || 1,
+      drink_after:   document.getElementById('wef-drink-after').value.trim() || null,
+      drink_by:      document.getElementById('wef-drink-by').value.trim() || null,
+      research:      document.getElementById('wef-research').value.trim() || null,
+      considerations:document.getElementById('wef-considerations').value.trim() || null,
+      label:         document.getElementById('wef-label').value.trim() || null,
+    };
+    if (!payload.name || !payload.producer) {
+      const err = document.getElementById('wineEditError');
+      err.textContent = 'Name and producer are required.';
+      err.removeAttribute('hidden');
+      return;
+    }
+    fetch(`/api/wines/${wine.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => r.json()).then(updated => {
+      updateWineRowFromResearch(updated);
+      openWineModal(updated.id);
+    });
+  });
+}
+
+function setupWineReresearchButton(wine) {
+  const btn = document.getElementById('wineReresearchBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    btn.textContent = 'Researching…';
+    btn.classList.add('loading');
+    fetch(`/api/wines/${wine.id}/research`, { method: 'POST' }).then(() => {
+      let attempts = 0;
+      const poll = setInterval(() => {
+        if (++attempts > 30) {
+          clearInterval(poll);
+          btn.disabled = false;
+          btn.textContent = 'Re-research';
+          btn.classList.remove('loading');
+          return;
+        }
+        fetch(`/api/wines/${wine.id}`).then(r => r.json()).then(updated => {
+          if (updated.drink_after || updated.drink_by || updated.research !== wine.research) {
+            clearInterval(poll);
+            btn.classList.remove('loading');
+            updateWineRowFromResearch(updated);
+            openWineModal(updated.id);
+          }
+        });
+      }, 3000);
+    });
+  });
+}
+
+// ── Inject new wine row ───────────────────────────────────────────────────────
+
+function injectNewWineRow(wine) {
+  const emptyRow = document.getElementById('wineEmptyRow');
+  if (emptyRow) emptyRow.remove();
+
+  const imgSrc = wine.image_path || '/static/images/default.svg';
+  const yearText = wine.year || '—';
+  const qtyHtml = wine.quantity > 1 ? ` <span class="qty-badge">×${wine.quantity}</span>` : '';
+  const ratingText = wine.rating != null ? Math.round(wine.rating) : '—';
+
+  const tr = document.createElement('tr');
+  tr.className = 'wine-row';
+  tr.dataset.id = wine.id;
+  tr.dataset.qty = wine.quantity || 1;
+  if (wine.date_imbibed) tr.dataset.imbibed = '1';
+  tr.innerHTML = `
+    <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(wine.name)}" onerror="this.src='/static/images/default.svg'"></td>
+    <td class="beer-name">${esc(wine.name)}${qtyHtml}</td>
+    <td class="col-year">${yearText}</td>
+    <td class="col-brewer">${esc(wine.producer)}</td>
+    <td class="col-region">${esc(wine.region || '—')}</td>
+    <td class="col-varietal">${esc(wine.varietal || '—')}</td>
+    <td class="col-wine-type">${esc(wine.wine_type || '—')}</td>
+    <td class="col-rating">${ratingText}</td>
+    <td class="col-drink-after">${wine.drink_after || '—'}</td>
+    <td class="col-drink-by">${wine.drink_by || '—'}</td>
+    <td class="col-days-left wine-days"
+        data-by="${wine.drink_by || ''}"
+        data-after="${wine.drink_after || ''}"
+        data-imbibed="${wine.date_imbibed || ''}"
+        data-label="${wine.label || ''}">—</td>
+    <td><span class="badge wine-badge"
+              data-after="${wine.drink_after || ''}"
+              data-by="${wine.drink_by || ''}"
+              data-imbibed="${wine.date_imbibed || ''}"
+              data-label="${wine.label || ''}"></span></td>`;
+
+  document.getElementById('wineTableBody').appendChild(tr);
+  tr.addEventListener('click', () => openWineModal(wine.id));
+
+  applyWineBadges();
+  sortWineTable();
+  syncWineCards();
+  applyWineFilters();
+
+  if (window.CELLAR_PRODUCERS && !window.CELLAR_PRODUCERS.includes(wine.producer)) {
+    window.CELLAR_PRODUCERS.push(wine.producer);
+    window.CELLAR_PRODUCERS.sort();
+  }
+}
+
+function updateWineRowFromResearch(wine) {
+  const row = document.querySelector(`tr.wine-row[data-id="${wine.id}"]`);
+  if (!row) return;
+  const afterTd = row.querySelector('td.col-drink-after');
+  const byTd = row.querySelector('td.col-drink-by');
+  const daysTd = row.querySelector('td.wine-days');
+  const badgeEl = row.querySelector('.wine-badge');
+  if (afterTd) afterTd.textContent = wine.drink_after || '—';
+  if (byTd) byTd.textContent = wine.drink_by || '—';
+  if (daysTd) { daysTd.dataset.after = wine.drink_after || ''; daysTd.dataset.by = wine.drink_by || ''; }
+  if (badgeEl) { badgeEl.dataset.after = wine.drink_after || ''; badgeEl.dataset.by = wine.drink_by || ''; }
+  applyWineBadges();
+  sortWineTable();
+  syncWineCards();
+}
+
+// ── Section switcher ──────────────────────────────────────────────────────────
+
+const SECTION_KEY = 'cellar_section';
+
+function switchSection(section) {
+  const beerSection = document.getElementById('beerSection');
+  const wineSection = document.getElementById('wineSection');
+  if (beerSection) beerSection.hidden = (section !== 'beer');
+  if (wineSection) wineSection.hidden = (section !== 'wine');
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.section === section);
+  });
+
+  localStorage.setItem(SECTION_KEY, section);
+}
+
+function setupSectionTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchSection(btn.dataset.section));
+  });
+  const saved = localStorage.getItem(SECTION_KEY) || 'beer';
+  switchSection(saved);
+}
+
+// ── Wine init ─────────────────────────────────────────────────────────────────
+
+applyWineBadges();
+setupWineSort();
+setupWineFilter();
+setupWineViewToggle();
+setupWineCardSort();
+updateWineSortIndicators();
+sortWineTable();
+setWineView(getWinePreferredView());
+setupSectionTabs();
+document.getElementById('wineTableBody')?.classList.add('ready');
+
+// ── Add Wine modal ────────────────────────────────────────────────────────────
+
+(function () {
+  if (!document.getElementById('addWineBtn')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'addWineModal';
+  overlay.setAttribute('hidden', '');
+  overlay.innerHTML = `
+    <div class="add-beer-box">
+      <div class="add-beer-header">
+        <span class="add-beer-title">Add Wine</span>
+        <button class="add-beer-close" id="addWineClose">✕</button>
+      </div>
+      <div id="addWineBody"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const state = { step: 0, results: [], selected: null };
+
+  function openAddWine() {
+    overlay.removeAttribute('hidden');
+    fetch('/api/auth')
+      .then(r => { if (r.ok) return renderWStep1(); else renderWStep0(); })
+      .catch(() => renderWStep0());
+  }
+
+  function closeAddWine() {
+    overlay.setAttribute('hidden', '');
+    state.results = [];
+    state.selected = null;
+  }
+
+  function body() { return document.getElementById('addWineBody'); }
+
+  function wStepIndicator(current) {
+    const labels = ['Search', 'Results', 'Confirm', 'Done'];
+    let html = '<div class="step-indicator">';
+    for (let i = 0; i < 4; i++) {
+      const idx = i + 1;
+      let cls = idx < current ? 'done' : idx === current ? 'active' : '';
+      html += `<div class="step-dot ${cls}">${idx < current ? '✓' : idx}</div>`;
+      if (i < 3) html += '<div class="step-line"></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderWStep0(errorMsg) {
+    body().innerHTML = `
+      <div class="add-beer-auth">
+        <label>Enter cellar password</label>
+        <input class="add-field" type="password" id="wAuthPwInput" placeholder="Password" autocomplete="current-password">
+        ${errorMsg ? `<div class="add-beer-error">${esc(errorMsg)}</div>` : ''}
+        <div class="add-beer-actions">
+          <button class="btn-primary" id="wAuthSubmitBtn">Unlock</button>
+        </div>
+      </div>`;
+    const input = document.getElementById('wAuthPwInput');
+    const btn = document.getElementById('wAuthSubmitBtn');
+    input.focus();
+    function doAuth() {
+      btn.disabled = true;
+      fetch('/api/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: input.value }),
+      }).then(r => { if (r.ok) renderWStep1(); else renderWStep0('Wrong password.'); })
+        .catch(() => renderWStep0('Network error.'));
+    }
+    btn.addEventListener('click', doAuth);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+  }
+
+  function renderWStep1() {
+    body().innerHTML = `
+      ${wStepIndicator(1)}
+      <div class="add-beer-form">
+        <label>Wine name</label>
+        <input class="add-field" id="wLookupName" type="text" placeholder="e.g. Brunello di Montalcino" autocomplete="off">
+        <label>Producer</label>
+        <input class="add-field" id="wLookupProducer" type="text" placeholder="Optional" autocomplete="off">
+        <label>Vintage</label>
+        <input class="add-field" id="wLookupYear" type="number" min="1900" max="2100" placeholder="YYYY">
+      </div>
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="wAddManuallyBtn">Add Manually</button>
+        <button class="btn-primary" id="wDoLookupBtn">Look Up</button>
+      </div>`;
+    document.getElementById('wLookupName').focus();
+    document.getElementById('wDoLookupBtn').addEventListener('click', doWineLookup);
+    document.getElementById('wAddManuallyBtn').addEventListener('click', () => { state.selected = null; renderWStep3({}); });
+    document.getElementById('wLookupName').addEventListener('keydown', e => { if (e.key === 'Enter') doWineLookup(); });
+  }
+
+  function doWineLookup() {
+    const name = document.getElementById('wLookupName').value.trim();
+    const producer = document.getElementById('wLookupProducer').value.trim();
+    state.year = parseInt(document.getElementById('wLookupYear').value) || null;
+    if (!name) return;
+    const q = [producer, name].filter(Boolean).join(' ');
+    body().innerHTML = '<div class="add-beer-loading">Searching Grapeminds…</div>';
+    fetch('/api/wine-lookup?q=' + encodeURIComponent(q))
+      .then(r => { if (r.status === 403) { renderWStep0(); return null; } return r.json(); })
+      .then(results => {
+        if (!results) return;
+        state.results = results;
+        renderWStep2();
+      })
+      .catch(() => { body().innerHTML = '<div class="add-beer-loading">Search failed. Try again.</div>'; });
+  }
+
+  function renderWStep2() {
+    const results = state.results;
+    let listHtml = '';
+    if (results.length === 0) {
+      listHtml = '<div class="add-beer-loading">No results found in Grapeminds.</div>';
+    } else {
+      listHtml = '<div class="lookup-results">';
+      results.forEach((r, i) => {
+        const meta = [r.producer_display_name || r.producer_name, r.color].filter(Boolean).join(' · ');
+        listHtml += `
+          <div class="lookup-result" data-idx="${i}">
+            <div class="lookup-result-thumb" style="background:var(--surface2);border-radius:4px"></div>
+            <div class="lookup-result-info">
+              <div class="lookup-result-name">${esc(r.display_name || '—')}</div>
+              <div class="lookup-result-meta">${esc(meta)}</div>
+            </div>
+          </div>`;
+      });
+      listHtml += '</div>';
+    }
+    body().innerHTML = `
+      ${wStepIndicator(2)}
+      ${listHtml}
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="wBackToStep1Btn">← Back</button>
+        <button class="btn-secondary" id="wNoneOfTheseBtn">Add manually</button>
+      </div>`;
+    document.querySelectorAll('#addWineBody .lookup-result').forEach(el => {
+      el.addEventListener('click', () => selectWineResult(parseInt(el.dataset.idx, 10)));
+    });
+    document.getElementById('wBackToStep1Btn').addEventListener('click', renderWStep1);
+    document.getElementById('wNoneOfTheseBtn').addEventListener('click', () => { state.selected = null; renderWStep3({}); });
+  }
+
+  function selectWineResult(idx) {
+    const r = state.results[idx];
+    state.selected = r;
+    renderWStep3(r);
+  }
+
+  function renderWStep3(wine) {
+    const producerList = (window.CELLAR_PRODUCERS || []).map(p => `<option value="${esc(p)}">`).join('');
+    const s = state.selected || {};
+    body().innerHTML = `
+      ${wStepIndicator(3)}
+      <datalist id="wProducerList">${producerList}</datalist>
+      <div class="add-beer-form">
+        <label>Wine name *</label>
+        <input class="add-field" id="wf-name" value="${esc(s.display_name || wine.name || '')}">
+        <label>Producer *</label>
+        <input class="add-field" id="wf-producer" value="${esc(s.producer_name || s.producer_display_name || wine.producer || '')}" list="wProducerList">
+        <label>Vintage</label>
+        <input class="add-field" id="wf-year" type="number" min="1900" max="2100" value="${state.year || ''}">
+        <label>Region</label>
+        <input class="add-field" id="wf-region" value="">
+        <label>Varietal</label>
+        <input class="add-field" id="wf-varietal" value="">
+        <label>Type</label>
+        <select class="add-field" id="wf-wine-type">
+          <option value="">—</option>
+          ${['red','white','rosé','sparkling','dessert'].map(t => `<option value="${t}" ${s.color === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select>
+        <label>Quantity</label>
+        <input class="add-field" id="wf-qty" type="number" min="1" value="1">
+        <label>Label</label>
+        <input class="add-field" id="wf-label" placeholder="e.g. Test" value="">
+      </div>
+      <div class="add-beer-error" id="wSubmitError" hidden></div>
+      <div class="add-beer-actions">
+        <button class="btn-secondary" id="wBackToStep2Btn">${state.results.length ? '← Back' : '← Back'}</button>
+        <button class="btn-primary" id="wSubmitWineBtn">Add to Cellar</button>
+      </div>`;
+    document.getElementById('wBackToStep2Btn').addEventListener('click', () => {
+      if (state.results.length) renderWStep2(); else renderWStep1();
+    });
+    document.getElementById('wSubmitWineBtn').addEventListener('click', doWineSubmit);
+  }
+
+  function doWineSubmit() {
+    const name = document.getElementById('wf-name').value.trim();
+    const producer = document.getElementById('wf-producer').value.trim();
+    const errEl = document.getElementById('wSubmitError');
+    if (!name || !producer) {
+      errEl.textContent = 'Wine name and producer are required.';
+      errEl.removeAttribute('hidden');
+      return;
+    }
+    errEl.setAttribute('hidden', '');
+    const s = state.selected || {};
+    const payload = {
+      name,
+      producer,
+      year:         parseInt(document.getElementById('wf-year').value) || null,
+      region:       document.getElementById('wf-region').value.trim() || null,
+      varietal:     document.getElementById('wf-varietal').value.trim() || null,
+      wine_type:    document.getElementById('wf-wine-type').value || null,
+      quantity:     parseInt(document.getElementById('wf-qty').value) || 1,
+      label:        document.getElementById('wf-label').value.trim() || null,
+      grapeminds_id: s.id || null,
+    };
+    const btn = document.getElementById('wSubmitWineBtn');
+    btn.disabled = true;
+    fetch('/api/wines', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(r => {
+      if (r.status === 403) { renderWStep0(); return null; }
+      if (!r.ok) { btn.disabled = false; errEl.textContent = 'Server error. Try again.'; errEl.removeAttribute('hidden'); return null; }
+      return r.json();
+    }).then(wine => {
+      if (!wine) return;
+      renderWStep4(wine);
+      injectNewWineRow(wine);
+    });
+  }
+
+  function renderWStep4(wine) {
+    body().innerHTML = `
+      ${wStepIndicator(4)}
+      <div class="add-beer-success">
+        <div class="add-beer-success-name">${esc(wine.name)}</div>
+        <div class="add-beer-success-brewer">${esc(wine.producer)}</div>
+        <div id="wResearchAnim" class="beer-mug-loader" aria-hidden="true">
+          <div class="mug-body">
+            <div class="mug-liquid" id="wMugLiquid">
+              <div class="mug-foam"></div>
+              <span class="mug-bubble" style="left:28%;animation-delay:0s"></span>
+              <span class="mug-bubble" style="left:55%;animation-delay:0.6s"></span>
+              <span class="mug-bubble" style="left:42%;animation-delay:1.2s"></span>
+            </div>
+          </div>
+          <div class="mug-handle"></div>
+        </div>
+        <div class="research-status" id="wResearchStatus">Fetching drinking window…</div>
+        <button class="btn-primary" id="addWineDoneBtn" style="margin-top:1rem">Done</button>
+      </div>`;
+    document.getElementById('addWineDoneBtn').addEventListener('click', closeAddWine);
+
+    if (!wine.grapeminds_id) {
+      const anim = document.getElementById('wResearchAnim');
+      if (anim) anim.hidden = true;
+      const el = document.getElementById('wResearchStatus');
+      if (el) el.textContent = 'No Grapeminds match — add a drinking window via Edit if needed.';
+      return;
+    }
+
+    let attempts = 0;
+    const poll = setInterval(() => {
+      if (++attempts > 30) {
+        clearInterval(poll);
+        const anim = document.getElementById('wResearchAnim');
+        if (anim) anim.hidden = true;
+        const el = document.getElementById('wResearchStatus');
+        if (el) el.textContent = 'No window found yet — you can re-research later.';
+        return;
+      }
+      fetch(`/api/wines/${wine.id}`).then(r => r.json()).then(updated => {
+        if (updated.drink_after || updated.drink_by) {
+          clearInterval(poll);
+          const anim = document.getElementById('wResearchAnim');
+          if (anim) anim.hidden = true;
+          const el = document.getElementById('wResearchStatus');
+          if (el) el.textContent = '✓ Drinking window set';
+          updateWineRowFromResearch(updated);
+        }
+      }).catch(() => {});
+    }, 3000);
+  }
+
+  document.getElementById('addWineBtn').addEventListener('click', openAddWine);
+  document.getElementById('addWineClose').addEventListener('click', closeAddWine);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAddWine(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeAddWine();
   });
 })();
