@@ -261,7 +261,8 @@ def api_research_beer(beer_id):
         target=_publish_background,
         args=(beer_id, {'name': beer['name'], 'brewer': beer['brewer'],
                         'style': None, 'year': beer.get('year'),
-                        'date_bottled': beer.get('date_bottled')}),
+                        'date_bottled': beer.get('date_bottled'),
+                        'label': beer.get('label')}),
         daemon=True,
     )
     t.start()
@@ -275,8 +276,9 @@ def api_delete_beer(beer_id):
     if not beer:
         abort(404)
     db.delete_beer(beer_id)
-    t = threading.Thread(target=_delete_background, args=(beer['name'], beer['brewer']), daemon=True)
-    t.start()
+    if beer.get('label') != 'Test':
+        t = threading.Thread(target=_delete_background, args=(beer['name'], beer['brewer']), daemon=True)
+        t.start()
     return '', 204
 
 
@@ -391,6 +393,7 @@ def api_research_wine(wine_id):
             'producer': wine['producer'],
             'grapeminds_id': wine.get('grapeminds_id'),
             'year': wine.get('year'),
+            'label': wine.get('label'),
         }),
         daemon=True,
     )
@@ -405,10 +408,11 @@ def api_delete_wine(wine_id):
     if not wine:
         abort(404)
     db.delete_wine(wine_id)
-    t = threading.Thread(
-        target=_delete_background, args=(wine['name'], wine['producer']), daemon=True
-    )
-    t.start()
+    if wine.get('label') != 'Test':
+        t = threading.Thread(
+            target=_delete_background, args=(wine['name'], wine['producer']), daemon=True
+        )
+        t.start()
     return '', 204
 
 
