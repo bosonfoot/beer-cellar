@@ -159,6 +159,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/beers', json={
             'name': '__TEST__ Minimal Beer',
             'brewer': '__TEST__ Brewery',
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 201)
         created_ids.append(r.json()['id'])
@@ -280,6 +281,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/beers', json={
             'name': '__TEST__ Imbibe Target',
             'brewer': '__TEST__ Brewery',
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 201)
         imbibe_id = r.json()['id']
@@ -350,6 +352,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/beers', json={
             'name': '__TEST__ Delete Me',
             'brewer': '__TEST__ Brewery',
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 201)
         del_id = r.json()['id']
@@ -403,6 +406,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/wines', json={
             'name': '__TEST__ Minimal Wine',
             'producer': '__TEST__ Winery',
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 201)
         created_wine_ids.append(r.json()['id'])
@@ -545,6 +549,7 @@ def run_all(base_url, verbose=False):
         r = s.post(f'{base_url}/api/wines', json={
             'name': '__TEST__ Delete Me Wine',
             'producer': '__TEST__ Winery',
+            'label': 'Test',
         })
         assert_eq('status', r.status_code, 201)
         del_id = r.json()['id']
