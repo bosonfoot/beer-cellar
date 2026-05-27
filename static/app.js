@@ -1622,7 +1622,6 @@ function renderWineModal(wine) {
       ${wine.producer ? `<div class="modal-date-item"><div class="modal-date-label">Producer</div><div class="modal-date-value">${esc(wine.producer)}</div></div>` : ''}
       ${wine.region ? `<div class="modal-date-item"><div class="modal-date-label">Region</div><div class="modal-date-value">${esc(wine.region)}</div></div>` : ''}
       ${wine.varietal ? `<div class="modal-date-item"><div class="modal-date-label">Varietal</div><div class="modal-date-value">${esc(wine.varietal)}</div></div>` : ''}
-      ${wine.wine_type ? `<div class="modal-date-item"><div class="modal-date-label">Type</div><div class="modal-date-value">${esc(wine.wine_type)}</div></div>` : ''}
       ${wine.rating != null ? `<div class="modal-date-item"><div class="modal-date-label">Rating</div><div class="modal-date-value">${Math.round(wine.rating)}${wine.rating_source ? ` <span style="font-size:0.8em;color:var(--text-muted)">(${esc(wine.rating_source)})</span>` : ''}</div></div>` : ''}
       <div class="modal-date-item"><div class="modal-date-label">Drink After</div><div class="modal-date-value">${formatDate(wine.drink_after)}</div></div>
       <div class="modal-date-item"><div class="modal-date-label">Drink By</div><div class="modal-date-value">${formatDate(wine.drink_by)}</div></div>
@@ -1786,11 +1785,6 @@ function renderWineEditForm(wine) {
       <input class="add-field" id="wef-region" value="${esc(wine.region || '')}">
       <label>Varietal</label>
       <input class="add-field" id="wef-varietal" value="${esc(wine.varietal || '')}">
-      <label>Type</label>
-      <select class="add-field" id="wef-wine-type">
-        <option value="">—</option>
-        ${['red','white','rosé','sparkling','dessert'].map(t => `<option value="${t}" ${wine.wine_type === t ? 'selected' : ''}>${t}</option>`).join('')}
-      </select>
       <label>Rating</label>
       <input class="add-field" id="wef-rating" type="number" min="0" max="100" value="${wine.rating != null ? wine.rating : ''}">
       <label>Rating source</label>
@@ -1822,7 +1816,6 @@ function renderWineEditForm(wine) {
       year:          parseInt(document.getElementById('wef-year').value) || null,
       region:        document.getElementById('wef-region').value.trim() || null,
       varietal:      document.getElementById('wef-varietal').value.trim() || null,
-      wine_type:     document.getElementById('wef-wine-type').value || null,
       rating:        parseFloat(document.getElementById('wef-rating').value) || null,
       rating_source: document.getElementById('wef-rating-source').value.trim() || null,
       quantity:      parseInt(document.getElementById('wef-qty').value) || 1,
@@ -2151,11 +2144,6 @@ document.getElementById('wineTableBody')?.classList.add('ready');
         <input class="add-field" id="wf-region" value="">
         <label>Varietal</label>
         <input class="add-field" id="wf-varietal" value="">
-        <label>Type</label>
-        <select class="add-field" id="wf-wine-type">
-          <option value="">—</option>
-          ${['red','white','rosé','sparkling','dessert'].map(t => `<option value="${t}" ${s.color === t ? 'selected' : ''}>${t}</option>`).join('')}
-        </select>
         <label>Quantity</label>
         <input class="add-field" id="wf-qty" type="number" min="1" value="1">
         <label>Label</label>
@@ -2189,7 +2177,6 @@ document.getElementById('wineTableBody')?.classList.add('ready');
       year:         parseInt(document.getElementById('wf-year').value) || null,
       region:       document.getElementById('wf-region').value.trim() || null,
       varietal:     document.getElementById('wf-varietal').value.trim() || null,
-      wine_type:    document.getElementById('wf-wine-type').value || null,
       quantity:     parseInt(document.getElementById('wf-qty').value) || 1,
       label:        document.getElementById('wf-label').value.trim() || null,
       grapeminds_id: s.id || null,
