@@ -11,6 +11,7 @@ from flask import Flask, render_template, jsonify, request, abort, session
 import db
 
 load_dotenv()
+db.init_db()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('CELLAR_SECRET_KEY', 'dev-insecure-key')
