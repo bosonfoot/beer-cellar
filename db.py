@@ -4,10 +4,14 @@ import os
 DB_PATH = os.path.join(os.path.dirname(__file__), 'cellar.db')
 
 
+_conn = None
+
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    global _conn
+    if _conn is None:
+        _conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        _conn.row_factory = sqlite3.Row
+    return _conn
 
 
 def init_db():
