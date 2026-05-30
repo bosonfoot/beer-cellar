@@ -23,6 +23,13 @@ REPO = os.path.dirname(__file__)
 _publish_lock = threading.Lock()
 
 
+@app.after_request
+def cache_static_images(response):
+    if request.path.startswith('/static/images/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response
+
+
 def brewer_slug(name):
     return re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
 

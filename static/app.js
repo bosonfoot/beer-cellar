@@ -732,8 +732,8 @@ function syncCards() {
 
     card.innerHTML = `
       <div class="card-img-wrap">
-        <img class="card-thumb" src="${img ? img.src : '/static/images/default.svg'}" alt=""
-             onerror="this.src='/static/images/default.svg'">
+        <img class="card-thumb" src="${img ? img.getAttribute('src') : '/static/images/default.svg'}" alt=""
+             loading="lazy" onerror="this.src='/static/images/default.svg'">
       </div>
       <div class="card-body">
         <div class="card-header">
@@ -1491,8 +1491,8 @@ function syncWineCards() {
 
     card.innerHTML = `
       <div class="card-img-wrap">
-        <img class="card-thumb" src="${img ? img.src : '/static/images/default.svg'}" alt=""
-             onerror="this.src='/static/images/default.svg'">
+        <img class="card-thumb" src="${img ? img.getAttribute('src') : '/static/images/default.svg'}" alt=""
+             loading="lazy" onerror="this.src='/static/images/default.svg'">
       </div>
       <div class="card-body">
         <div class="card-header">

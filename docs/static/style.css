@@ -135,6 +135,8 @@ tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; 
 tbody tr:last-child { border-bottom: none; }
 tbody tr.beer-row { cursor: pointer; }
 tbody tr.beer-row:hover { background: var(--surface2) !important; }
+tbody tr.wine-row { cursor: pointer; }
+tbody tr.wine-row:hover { background: var(--surface2) !important; }
 
 td {
   padding: 0.65rem 0.875rem;
@@ -551,6 +553,7 @@ tr[data-imbibed] td { opacity: 0.5; }
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.875rem;
 }
+.card-grid[hidden] { display: none; }
 
 .beer-card {
   background: var(--surface);
@@ -667,7 +670,7 @@ span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82
 .btn-secondary:hover { color: var(--text); border-color: var(--text-muted); }
 
 /* Add Beer modal overlay — sits above the detail modal */
-#addBeerModal {
+#addBeerModal, #addWineModal {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
@@ -677,7 +680,7 @@ span.days-urgent     { color: var(--red-text); font-weight: 600; font-size: 0.82
   z-index: 200;
   padding: 1rem;
 }
-#addBeerModal[hidden] { display: none; }
+#addBeerModal[hidden], #addWineModal[hidden] { display: none; }
 
 .add-beer-box {
   background: var(--surface);
