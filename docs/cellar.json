@@ -67,6 +67,28 @@
       "image_path": "static/images/beers/beer_17.jpeg"
     },
     {
+      "id": 124,
+      "name": "MMXXIV-MMXXV That-Which-Is (2024 and 2025 Harvest)",
+      "brewer": "Floodland Brewing",
+      "date_bottled": null,
+      "drink_after": "2024-01",
+      "drink_by": "2025-01",
+      "research": "No specific drinking window published for this beer. Estimated 2024-01 to 2025-01 based on standard saison aging characteristics. Floodland Brewing typically focuses on mixed-culture, bottle-conditioned saisons designed for fresh drinking with aging potential; flagship saisons from this brewery generally maintain quality for 12 months post-release.",
+      "food_pairings": null,
+      "considerations": "\"In later years it occasionally happened that I awoke in the night and the stars were so real and advanced so convincingly that I could not understand how people managed to lose so much of the world\"\n(Rainer Maria Rilke)\n\n2024 and 2025 harvest. This beer was made using saison refermented with 2024 Mourvedre and Syrah grapes from French Creek Vineyards in the Yakima River Valley. After aging over-vintage that beer was further refermented on 2025 organic Balaton cherries from the Old Weddle Farm courtesy of OPMA, and organic blackberries from Sidhu Farms in the Puyallup River Valley.\n\nThis beer was refermented to condition in the bottle.\n\nBottled 02/05/2026\n\nConditioned with: Organic cane sugar.\nCellar: Still on its ascent. Of all the beers in this release this is the one which I think will most benefit from additional (warm) aging in bottle. It's drinking nicely right now but I think it'll really start to hit its stride late summer/fall '26, and probably not peak until spring 2027",
+      "date_added": "2026-06-13",
+      "abv": 6.85,
+      "image_url": "/static/images/beers/beer_6720300.jpeg",
+      "date_imbibed": null,
+      "quantity": 2,
+      "year": 2024,
+      "untappd_rating": 4.76667,
+      "imbibe_notes": null,
+      "label": null,
+      "parent_id": null,
+      "image_path": "static/images/beers/beer_6720300.jpeg"
+    },
+    {
       "id": 18,
       "name": "Tete de Cuvee",
       "brewer": "Side Project Brewing",
