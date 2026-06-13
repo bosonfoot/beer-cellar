@@ -113,7 +113,9 @@
       "Bash(Select-Object FullName)",
       "Bash(Sort-Object FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ldema\\\\OneDrive\\\\AI Workspace\\\\beer cellar\" -Force)",
-      "Bash(Select-Object Name, Mode)"
+      "Bash(Select-Object Name, Mode)",
+      "Bash(sqlite3 *)",
+      "PowerShell(sqlite3 *)"
     ]
   }
 }
