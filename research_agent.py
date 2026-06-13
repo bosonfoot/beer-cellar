@@ -27,9 +27,10 @@ SYSTEM_PROMPT = """You are a beer cellar research assistant. Given a beer's name
 and vintage year, search the web for its optimal drinking window.
 
 Priority sources (best to worst):
-1. The brewery's own bottle log or website
-2. Beer review sites that mention "drink by", "peak", "drinking window", or "aging"
-3. General style aging guides as a last resort
+1. Brewer's own bottling/cellar notes provided in the prompt — these are the most authoritative source
+2. The brewery's own bottle log or website
+3. Beer review sites that mention "drink by", "peak", "drinking window", or "aging"
+4. General style aging guides as a last resort
 
 Return ONLY a JSON object — no prose before or after — with these fields:
 {
@@ -53,7 +54,7 @@ When using an estimate, note it clearly in the research field:
 Only return null for drink_after/drink_by if the bottling date and style are both completely unknown."""
 
 
-def run(beer_id, name, brewer, style=None, year=None, date_bottled=None):
+def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, considerations=None):
     """Research drink window for a beer and update the DB."""
     api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
@@ -73,6 +74,8 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None):
         prompt += f', Vintage: {effective_year}'
     if date_bottled:
         prompt += f', Bottled: {date_bottled}'
+    if considerations:
+        prompt += f'\n\nBrewer\'s bottling/cellar notes (highest-priority source):\n{considerations}'
 
     print(f'[research] Prompt: {prompt}')
     messages = [{"role": "user", "content": prompt}]

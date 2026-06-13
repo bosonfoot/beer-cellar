@@ -145,6 +145,7 @@ def _publish_background(beer_id, data):
         style=data.get('style'),
         year=data.get('year'),
         date_bottled=data.get('date_bottled'),
+        considerations=data.get('considerations'),
     )
     # Skip git operations for test/draft beers.
     if data.get('label') == 'Test':
@@ -270,6 +271,7 @@ def api_research_beer(beer_id):
         args=(beer_id, {'name': beer['name'], 'brewer': beer['brewer'],
                         'style': None, 'year': beer.get('year'),
                         'date_bottled': beer.get('date_bottled'),
+                        'considerations': beer.get('considerations'),
                         'label': beer.get('label')}),
         daemon=True,
     )
