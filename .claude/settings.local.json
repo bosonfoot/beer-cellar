@@ -111,7 +111,9 @@
       "Bash(python3 -m json.tool)",
       "Bash(Get-ChildItem -Recurse \"C:\\\\Users\\\\ldema\\\\OneDrive\\\\AI Workspace\\\\beer cellar\" -Force)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ldema\\\\OneDrive\\\\AI Workspace\\\\beer cellar\" -Force)",
+      "Bash(Select-Object Name, Mode)"
     ]
   }
 }
