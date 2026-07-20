@@ -83,6 +83,15 @@ function applyBadges() {
         if (isCell) el.dataset.sortVal = d;
         el.classList.add('days-aging');
       }
+    } else if (status === 'Past Peak') {
+      // Negative days overdue (past drink_by) — sorts ahead of everything via
+      // STATUS_SORT_RANK regardless of direction; the number shows how overdue.
+      const d = daysLeft(el.dataset.by);
+      if (d !== null) {
+        el.textContent = d;
+        if (isCell) el.dataset.sortVal = d;
+        el.classList.add('days-urgent');
+      }
     } else {
       el.textContent = '—';
       if (isCell) el.dataset.sortVal = '';
@@ -128,13 +137,15 @@ const NUMERIC_COLS = new Set(['year', 'abv', 'untappd_rating', 'days_left']);
 
 // When sorting by days_left, status rank is the silent primary key so that
 // Drink Now always groups above Peak Approaching (both show a days value,
-// but the numbers mean different things and shouldn't be compared directly)
+// but the numbers mean different things and shouldn't be compared directly).
+// Past Peak ranks first — those beers are overdue, more urgent than anything
+// still inside its window — so it bubbles to the top regardless of sort direction.
 const STATUS_SORT_RANK = {
-  'Drink Now':        0,
-  'Peak Approaching': 1,
-  'Aging':            2,
-  'Unknown':          3,
-  'Past Peak':        4,
+  'Past Peak':        0,
+  'Drink Now':        1,
+  'Peak Approaching': 2,
+  'Aging':            3,
+  'Unknown':          4,
   'Happily Imbibed':  5,
   'Test':             6,
 };
@@ -1358,6 +1369,9 @@ function applyWineBadges() {
     } else if (status === 'Aging') {
       const d = daysLeft(td.dataset.after);
       if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-aging'); }
+    } else if (status === 'Past Peak') {
+      const d = daysLeft(td.dataset.by);
+      if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-urgent'); }
     } else {
       td.textContent = '—';
       td.dataset.sortVal = '';
