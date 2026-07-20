@@ -410,7 +410,7 @@
       "abv": 5.8,
       "image_url": "/static/images/beers/beer_6720301.jpeg",
       "date_imbibed": null,
-      "quantity": 2,
+      "quantity": 1,
       "year": 2025,
       "untappd_rating": 4.71275,
       "imbibe_notes": null,
@@ -725,6 +725,28 @@
       "label": null,
       "parent_id": null,
       "image_path": "static/images/beers/beer_8.webp"
+    },
+    {
+      "id": 126,
+      "name": "Filaree (2025)",
+      "brewer": "Floodland Brewing",
+      "date_bottled": "2025",
+      "drink_after": "2026-06",
+      "drink_by": "2028-12",
+      "research": "No official cellaring window published for 2025 Filaree. Estimated based on Floodland Brewing's established aging patterns for barrel-aged, fruit-refermented saisons. The brewery's similar heavily-fruited saisons (e.g., Nothing Ever Begins variants) typically peak 12-18 months post-bottling and remain cellarworthy 3-5 years. Bottling 2025-01 (assumed).",
+      "food_pairings": null,
+      "considerations": "This beer was created using 2025 harvest Santa Rosa, Shiro, Elephant Heart, Howard's Miracle, and Green Gage plums grown organically in the Okanogan Valley by JC and Amber Kaufmann at Filaree Fruit. The plums were refermented with barrel aged spelt saison and wheat saison.\n\nThis bottling was made in an attempt to showcase the fruit grown by the Kaufmann family at Filaree. Refermented to condition in the bottle.\n\nBottled 12/11/2025\n\nConditioned with: Organic sugar.\nCellar: This has been conditioned in the bottle for 6+ months prior to release and is drinking great. It should continue to drink well for several years, but I don't think aging will improve it significantly. Best before 2029.",
+      "date_added": "2026-07-20",
+      "abv": 5.8,
+      "image_url": "/static/images/beers/beer_6720301.jpeg",
+      "date_imbibed": "2026-07-20",
+      "quantity": 1,
+      "year": 2025,
+      "untappd_rating": 4.71275,
+      "imbibe_notes": "Lovely; not too tart.",
+      "label": null,
+      "parent_id": 123,
+      "image_path": "static/images/beers/beer_6720301.jpeg"
     }
   ],
   "wines": [
