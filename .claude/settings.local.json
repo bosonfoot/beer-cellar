@@ -122,7 +122,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 5 http://127.0.0.1:5000/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://127.0.0.1:5000/api/beers/9999999/imbibe -H \"Content-Type: application/json\" -d '{\"notes\":null}')",
       "Bash(python -c ' *)",
-      "Bash(curl -s -X POST http://127.0.0.1:5000/api/beers/90/research -H \"Content-Type: application/json\")"
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/beers/90/research -H \"Content-Type: application/json\")",
+      "Bash(python research_review.py \"C:/Users/ldema/AppData/Local/Temp/claude/C--Users-ldema-OneDrive-AI-Workspace-beer-cellar/77cbb512-b64a-4956-b03e-bbc15743dcae/scratchpad/research_review.md\")"
     ]
   }
 }

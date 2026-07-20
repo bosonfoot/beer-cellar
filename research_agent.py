@@ -19,9 +19,16 @@ and needs to be resumed) but in practice most beer research finishes in one roun
 import json
 import os
 import re
+import sys
 
 import anthropic
 import db
+
+# Windows defaults stdout to cp1252 when redirected to a file/pipe, which can't encode
+# characters (e.g. en-dash, arrows) that web search results sometimes contain — that
+# crashes the debug prints below and silently kills research for that beer.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(errors='replace')
 
 SYSTEM_PROMPT = """You are a beer cellar research assistant. Given a beer's name, brewery, style,
 and vintage year, search the web for its optimal drinking window.
@@ -51,17 +58,47 @@ using the bottling date (or vintage year) as the starting point:
 When using an estimate, note it clearly in the research field:
 "No official window published. Estimated [drink_after]–[drink_by] based on [style] aging characteristics and bottling date [YYYY-MM]."
 
-Only return null for drink_after/drink_by if the bottling date and style are both completely unknown."""
+Only return null for drink_after/drink_by if the bottling date and style are both completely unknown.
+
+If prior research findings are provided in the prompt, treat them as your own earlier work, not
+a blank slate:
+- Only change a date or the research note if you find something MORE authoritative than what's
+  already there (an official brewer/bottle-log source beats a style-based estimate; a specific
+  quote beats a vague one). Don't replace a sourced finding with a re-derived generic estimate
+  just because this search didn't happen to surface the same source again.
+- If you don't find anything better than the prior finding, return the prior values UNCHANGED —
+  do not paraphrase or shorten a good research note for its own sake.
+- Never return null for a field that already has a value just because this search came up empty.
+  A failed search is not evidence the beer doesn't exist or that the prior data is wrong."""
 
 
 def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, considerations=None):
     """Research drink window for a beer and update the DB."""
+    data = fetch_research(name, brewer, style=style, year=year,
+                           date_bottled=date_bottled, considerations=considerations)
+    if data:
+        db.update_beer_research(
+            beer_id,
+            drink_after=data.get('drink_after'),
+            drink_by=data.get('drink_by'),
+            research=data.get('research'),
+        )
+        print(f'[research] DB updated for beer {beer_id}')
+
+
+def fetch_research(name, brewer, style=None, year=None, date_bottled=None, considerations=None,
+                    existing_drink_after=None, existing_drink_by=None, existing_research=None):
+    """Search the web for a beer's drinking window. Returns {drink_after, drink_by, research}
+    or None on failure — does NOT write to the DB.
+
+    Pass existing_* to re-research a beer that already has findings — the model is instructed
+    to only overwrite them with something more authoritative, not re-derive from scratch."""
     api_key = os.environ.get('ANTHROPIC_API_KEY')
     if not api_key:
         print(f'[research] No ANTHROPIC_API_KEY in environment — skipping')
-        return
+        return None
 
-    print(f'[research] Starting research for beer {beer_id}: "{name}" by {brewer}')
+    print(f'[research] Starting research for "{name}" by {brewer}')
     client = anthropic.Anthropic(api_key=api_key)
 
     # Fall back to the year portion of date_bottled if no explicit vintage year
@@ -76,6 +113,14 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, conside
         prompt += f', Bottled: {date_bottled}'
     if considerations:
         prompt += f'\n\nBrewer\'s bottling/cellar notes (highest-priority source):\n{considerations}'
+    if existing_drink_after or existing_drink_by or existing_research:
+        prompt += (
+            f'\n\nYour prior findings for this beer (only overwrite if you find something more '
+            f'authoritative — see instructions):\n'
+            f'  drink_after: {existing_drink_after or "unknown"}\n'
+            f'  drink_by: {existing_drink_by or "unknown"}\n'
+            f'  research: {existing_research or "none"}'
+        )
 
     print(f'[research] Prompt: {prompt}')
     messages = [{"role": "user", "content": prompt}]
@@ -115,11 +160,11 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, conside
 
     except Exception as e:
         print(f'[research] API error: {type(e).__name__}: {e}')
-        return
+        return None
 
     if not response:
         print(f'[research] No response received')
-        return
+        return None
 
     # Find the final text block — Claude emits an intro text before searching,
     # so we want the LAST text block which contains the JSON result.
@@ -129,7 +174,7 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, conside
     print(f'[research] Using last text block: {text!r}')
     if not text:
         print(f'[research] No text block in response')
-        return
+        return None
 
     try:
         # Claude should return pure JSON, but extract it robustly in case there's prose
@@ -137,21 +182,21 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, conside
         end = text.rfind("}") + 1
         if start < 0 or end <= start:
             print(f'[research] No JSON object found in response')
-            return
+            return None
         data = json.loads(text[start:end])
         print(f'[research] Parsed: drink_after={data.get("drink_after")}, drink_by={data.get("drink_by")}')
         # Strip <cite ...>...</cite> tags that leak in from web search results
         research_text = data.get("research") or None
         if research_text:
             research_text = re.sub(r'<cite[^>]*>(.*?)</cite>', r'\1', research_text, flags=re.DOTALL).strip()
-        db.update_beer_research(
-            beer_id,
-            drink_after=data.get("drink_after") or None,
-            drink_by=data.get("drink_by") or None,
-            research=research_text or None,
-        )
-        print(f'[research] DB updated for beer {beer_id}')
+        return {
+            'drink_after': data.get('drink_after') or None,
+            'drink_by': data.get('drink_by') or None,
+            'research': research_text or None,
+        }
     except json.JSONDecodeError as e:
         print(f'[research] JSON parse error: {e}')
+        return None
     except Exception as e:
         print(f'[research] Unexpected error: {type(e).__name__}: {e}')
+        return None
