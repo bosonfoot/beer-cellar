@@ -727,6 +727,28 @@
       "image_path": "static/images/brewers/floodland_brewing.png"
     },
     {
+      "id": 130,
+      "name": "2025 Exoculo",
+      "brewer": "Floodland Brewing",
+      "date_bottled": null,
+      "drink_after": null,
+      "drink_by": null,
+      "research": "A spritzy crusher \u2014 aged saison refermented on 'Flavor Grenade' pluots, one of Floodland's favorite pluot varietals (also used in earlier Exoculo vintages, e.g. 2019/2020). Not yet listed on Untappd or the Floodland bottle log as of 2026-07-24 (very recent mailing-list release; prior Exoculo vintages from 2019/2020 rated 4.7/5 on Untappd as Farmhouse Ale/Saison). No official drink window published. Estimated drink_after 2026-07 (described as a spritzy 'crusher,' i.e. meant to drink young and fast) and drink_by 2028-01 (~18 months, shorter window consistent with lighter, fresher Floodland releases like Nothing Ever Begins and MMXXIV Gruner Veltliner).",
+      "food_pairings": "Spritzy, fruit-forward saison \u2014 pairs well with charcuterie, soft cheeses, or as a warm-weather aperitif.",
+      "considerations": "2 bottles. Described as a 'crusher' \u2014 prioritize drinking this one relatively soon rather than long cellaring.",
+      "date_added": "2026-07-25",
+      "abv": null,
+      "image_url": null,
+      "date_imbibed": null,
+      "quantity": 2,
+      "year": 2025,
+      "untappd_rating": null,
+      "imbibe_notes": null,
+      "label": null,
+      "parent_id": null,
+      "image_path": "static/images/brewers/floodland_brewing.png"
+    },
+    {
       "id": 1,
       "name": "MMXXI Muscat",
       "brewer": "Floodland Brewing",
