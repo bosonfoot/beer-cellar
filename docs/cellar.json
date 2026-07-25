@@ -705,6 +705,28 @@
       "image_path": "static/images/brewers/floodland_brewing.png"
     },
     {
+      "id": 129,
+      "name": "Of Graves, Of Worms, and Epitaphs",
+      "brewer": "Floodland Brewing",
+      "date_bottled": null,
+      "drink_after": null,
+      "drink_by": null,
+      "research": "Barrel-aged saison refermented on 2024 harvest white grape pomace (Gruner Veltliner and Chardonnay), further aged in barrel, then refermented on a blend of organic 2025 harvest nectarines and pale pluots from Collins Family Orchard. Not yet listed on Untappd or the Floodland bottle log as of 2026-07-24 (very recent mailing-list release). No official drink window published. Estimated drink_after 2026-07 (fresh, currently drinking per typical Floodland release-timing) and drink_by 2029-07 (~3 years, consistent with the brewery's multi-refermented, barrel-aged fruited blends like MMXXIV-MMXXV That-Which-Is and MMXXIV Flowers of the Field, which favor longer cellar windows than single-ferment releases).",
+      "food_pairings": "Complex barrel-aged saison with grape and stone fruit character \u2014 pairs well with roasted pork, aged cheeses, or a fruit tart.",
+      "considerations": "2 bottles. Dual harvest (2024 grape pomace, 2025 stone fruit) reflected in the 2024-2025 vintage naming.",
+      "date_added": "2026-07-25",
+      "abv": null,
+      "image_url": null,
+      "date_imbibed": null,
+      "quantity": 2,
+      "year": 2025,
+      "untappd_rating": null,
+      "imbibe_notes": null,
+      "label": null,
+      "parent_id": null,
+      "image_path": "static/images/brewers/floodland_brewing.png"
+    },
+    {
       "id": 1,
       "name": "MMXXI Muscat",
       "brewer": "Floodland Brewing",
