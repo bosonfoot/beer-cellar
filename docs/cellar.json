@@ -683,6 +683,28 @@
       "image_path": "static/images/beers/beer_20.jpeg"
     },
     {
+      "id": 128,
+      "name": "2026 Dead as Dreams",
+      "brewer": "Floodland Brewing",
+      "date_bottled": null,
+      "drink_after": null,
+      "drink_by": null,
+      "research": "Pale, refreshing, and aromatic \u2014 a classic Floodland bottle. Second release in a series that began with 'Cut Their Grain and Place Fire Therein.' Not yet listed on Untappd or the Floodland bottle log as of 2026-07-24 (very recent mailing-list release). No official drink window published. Estimated drink_after 2026-07 (fresh, low-ABV pale style, drink young per Floodland pattern for similar-ABV releases like I Want to Be Known and Nothing Ever Begins) and drink_by 2028-07 (~2 years, consistent with the brewery's lighter/fresher bottlings).",
+      "food_pairings": "Light, refreshing pale saison \u2014 pairs well with fresh cheeses, salads, and light seafood.",
+      "considerations": "2 bottles.",
+      "date_added": "2026-07-25",
+      "abv": 4.5,
+      "image_url": null,
+      "date_imbibed": null,
+      "quantity": 2,
+      "year": 2026,
+      "untappd_rating": null,
+      "imbibe_notes": null,
+      "label": null,
+      "parent_id": null,
+      "image_path": "static/images/brewers/floodland_brewing.png"
+    },
+    {
       "id": 1,
       "name": "MMXXI Muscat",
       "brewer": "Floodland Brewing",
