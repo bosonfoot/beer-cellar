@@ -84,8 +84,8 @@ function applyBadges() {
         el.classList.add('days-aging');
       }
     } else if (status === 'Past Peak') {
-      // Negative days overdue (past drink_by) — sorts ahead of everything via
-      // STATUS_SORT_RANK regardless of direction; the number shows how overdue.
+      // Negative days overdue (past drink_by) — sorts naturally as the
+      // smallest days_left value, ahead of everything still in-window.
       const d = daysLeft(el.dataset.by);
       if (d !== null) {
         el.textContent = d;
@@ -135,21 +135,6 @@ function updateSortIndicators() {
 // Columns that sort numerically
 const NUMERIC_COLS = new Set(['year', 'abv', 'untappd_rating', 'days_left']);
 
-// When sorting by days_left, status rank is the silent primary key so that
-// Drink Now always groups above Peak Approaching (both show a days value,
-// but the numbers mean different things and shouldn't be compared directly).
-// Past Peak ranks first — those beers are overdue, more urgent than anything
-// still inside its window — so it bubbles to the top regardless of sort direction.
-const STATUS_SORT_RANK = {
-  'Past Peak':        0,
-  'Drink Now':        1,
-  'Peak Approaching': 2,
-  'Aging':            3,
-  'Unknown':          4,
-  'Happily Imbibed':  5,
-  'Test':             6,
-};
-
 function cellValue(row, col) {
   // days_left uses a data attribute since the cell text changes dynamically
   if (col === 'days_left') {
@@ -172,14 +157,6 @@ function sortTable() {
     const ai = a.dataset.imbibed ? 1 : 0;
     const bi = b.dataset.imbibed ? 1 : 0;
     if (ai !== bi) return ai - bi;
-
-    // When sorting by days_left, group by status first — Drink Now before
-    // Peak Approaching — because the two values measure different things
-    if (sortCol === 'days_left') {
-      const ra = STATUS_SORT_RANK[a.querySelector('.badge')?.textContent] ?? 3;
-      const rb = STATUS_SORT_RANK[b.querySelector('.badge')?.textContent] ?? 3;
-      if (ra !== rb) return ra - rb;
-    }
 
     const av = cellValue(a, sortCol);
     const bv = cellValue(b, sortCol);
@@ -1406,11 +1383,6 @@ function sortWineTable() {
     const ai = a.dataset.imbibed ? 1 : 0;
     const bi = b.dataset.imbibed ? 1 : 0;
     if (ai !== bi) return ai - bi;
-    if (wineSortCol === 'days_left') {
-      const ra = STATUS_SORT_RANK[a.querySelector('.wine-badge')?.textContent] ?? 3;
-      const rb = STATUS_SORT_RANK[b.querySelector('.wine-badge')?.textContent] ?? 3;
-      if (ra !== rb) return ra - rb;
-    }
     const av = wineCellValue(a, wineSortCol);
     const bv = wineCellValue(b, wineSortCol);
     if (av === '' && bv === '') return 0;
