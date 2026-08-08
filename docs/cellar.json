@@ -498,7 +498,7 @@
       "abv": 6.52,
       "image_url": null,
       "date_imbibed": null,
-      "quantity": 2,
+      "quantity": 1,
       "year": 2025,
       "untappd_rating": null,
       "imbibe_notes": null,
@@ -835,6 +835,28 @@
       "label": null,
       "parent_id": 123,
       "image_path": "static/images/beers/beer_6720301.jpeg"
+    },
+    {
+      "id": 131,
+      "name": "Of Graves, Of Worms, and Epitaphs",
+      "brewer": "Floodland Brewing",
+      "date_bottled": "2026-02-26",
+      "drink_after": "2026-06-26",
+      "drink_by": "2027-03-01",
+      "research": "Originally conceived as a 2024-2025 Seekers After Light using RAMA peaches, but the 2025 RAMA harvest was cut short when Nathan broke his foot. Brian Collins stepped in with nectarines from a spectacular '25 harvest, and the concept shifted to combining Seekers After Light with CFO2. This first iteration leans more toward Seekers, intentionally leaving room for further exploration of the blend in future years. Made from a blend of two 2024 white grape varietals (citrus-forward Gruner pomace barrel and Chardonnay, aged over-vintage into fall 2025) refermented on 2025 Collins Family Orchard yellow-fleshed nectarines and Flavor Grenade pluots \u2014 the pluots are subtle, rounding out the nectarine aroma/flavor rather than standing out on their own.\n\nBrewer cellar note (Adam Paysse, from bottle release email, bottled 2026-02-26): \"Drinking nicely at 4+ months in the bottle, but should really peak this summer/fall. I strongly prefer peach/nectarine beers during the first year or two in the bottle, so I'd suggest drinking by spring 2027 (it will absolutely be fine beyond that, especially if you enjoy aged peach beers).\"",
+      "food_pairings": "Complex barrel-aged saison with grape and nectarine character \u2014 pairs well with roasted pork, aged cheeses, or a fruit tart.",
+      "considerations": "2 bottles. Dual harvest (2024 grape pomace, 2025 stone fruit) reflected in the 2024-2025 vintage naming. Fine to hold past spring 2027 if you like aged peach beers.",
+      "date_added": "2026-08-08",
+      "abv": 6.52,
+      "image_url": null,
+      "date_imbibed": "2026-08-08",
+      "quantity": 1,
+      "year": 2025,
+      "untappd_rating": null,
+      "imbibe_notes": "Should have paid better attention.  We both liked this.",
+      "label": null,
+      "parent_id": 129,
+      "image_path": "static/images/brewers/floodland_brewing.png"
     }
   ],
   "wines": [
