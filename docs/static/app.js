@@ -53,8 +53,8 @@ function applyBadges() {
     el.className = 'badge ' + (STATUS_CLASS[status] || 'badge-unknown');
   });
 
-  // Populate Days Left cells — "Drink Now" shows days until drink_by,
-  // "Peak Approaching" shows days until drink_after (days until peak hits)
+  // Populate Days Left cells — always shows days remaining until drink_by
+  // (i.e. days until the beer is past its peak), regardless of status.
   const DAY_CLASSES = ['days-drink-now', 'days-approaching', 'days-aging', 'days-soon', 'days-urgent'];
 
   function applyDaysEl(el, isCell) {
@@ -70,14 +70,14 @@ function applyBadges() {
         else if (d <= 90)  el.classList.add('days-soon');
       }
     } else if (status === 'Peak Approaching') {
-      const d = daysLeft(el.dataset.after);
+      const d = daysLeft(el.dataset.by);
       if (d !== null) {
         el.textContent = d;
         if (isCell) el.dataset.sortVal = d;
         el.classList.add('days-approaching');
       }
     } else if (status === 'Aging') {
-      const d = daysLeft(el.dataset.after);
+      const d = daysLeft(el.dataset.by);
       if (d !== null) {
         el.textContent = d;
         if (isCell) el.dataset.sortVal = d;
@@ -1364,10 +1364,10 @@ function applyWineBadges() {
         else if (d <= 90) td.classList.add('days-soon');
       }
     } else if (status === 'Peak Approaching') {
-      const d = daysLeft(td.dataset.after);
+      const d = daysLeft(td.dataset.by);
       if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-approaching'); }
     } else if (status === 'Aging') {
-      const d = daysLeft(td.dataset.after);
+      const d = daysLeft(td.dataset.by);
       if (d !== null) { td.textContent = d; td.dataset.sortVal = d; td.classList.add('days-aging'); }
     } else if (status === 'Past Peak') {
       const d = daysLeft(td.dataset.by);
