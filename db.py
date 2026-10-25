@@ -1,7 +1,8 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'cellar.db')
+DB_PATH = os.environ.get('CELLAR_DB_PATH') or os.path.join(os.path.dirname(__file__), 'cellar.db')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
 _conn = None
