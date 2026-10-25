@@ -1,0 +1,52 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'db.py'
+      - 'agent_*.py'
+      - 'research_agent*.py'
+      - 'research_review.py'
+      - 'apply_research.py'
+      - 'untappd_client.py'
+      - 'brewery_defaults.json'
+      - 'requirements.txt'
+      - 'templates/**'
+      - 'static/**'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package app (exclude local data and secrets)
+        run: |
+          mkdir -p /tmp/deploy
+          rsync -a \
+            --exclude='.venv' --exclude='__pycache__' --exclude='.git' \
+            --exclude='.github' --exclude='docs' --exclude='.claude' \
+            --exclude='.env' --exclude='wine cellar API key.txt' \
+            --exclude='cellar.db' --exclude='cellar-ALPHA.db' \
+            --exclude='*.zip' --exclude='test_*' \
+            ./ /tmp/deploy/
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: lincoln-beer-cellar
+          package: /tmp/deploy
