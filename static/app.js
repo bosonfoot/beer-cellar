@@ -453,14 +453,66 @@ function openModal(beerId) {
   });
 }
 
+function promptImbibeAuth(triggerBtn, onSuccess) {
+  const section = triggerBtn.parentElement;
+  triggerBtn.setAttribute('hidden', '');
+  const box = document.createElement('div');
+  box.className = 'add-beer-auth';
+  box.innerHTML = `
+    <label>Enter cellar password</label>
+    <input class="add-field" type="password" id="imbibeAuthPw" placeholder="Password" autocomplete="current-password">
+    <div class="add-beer-error" id="imbibeAuthErr" hidden></div>
+    <div class="add-beer-actions">
+      <button class="btn-imbibe-cancel" id="imbibeAuthCancel">Cancel</button>
+      <button class="btn-imbibe-confirm" id="imbibeAuthSubmit">Log in</button>
+    </div>`;
+  section.insertBefore(box, triggerBtn);
+  const pwInput = box.querySelector('#imbibeAuthPw');
+  const errEl = box.querySelector('#imbibeAuthErr');
+  pwInput.focus();
+
+  box.querySelector('#imbibeAuthCancel').addEventListener('click', () => {
+    box.remove();
+    triggerBtn.removeAttribute('hidden');
+  });
+
+  function doAuth() {
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwInput.value }),
+    }).then(r => {
+      if (r.ok) {
+        box.remove();
+        triggerBtn.removeAttribute('hidden');
+        onSuccess();
+      } else {
+        errEl.textContent = 'Wrong password.';
+        errEl.removeAttribute('hidden');
+      }
+    }).catch(() => {
+      errEl.textContent = 'Network error.';
+      errEl.removeAttribute('hidden');
+    });
+  }
+  box.querySelector('#imbibeAuthSubmit').addEventListener('click', doAuth);
+  pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+}
+
 function setupImbibeButton(beerId) {
   const btn = document.getElementById('imbibeBtn');
   if (!btn) return;
 
   btn.addEventListener('click', () => {
-    document.getElementById('imbibeConfirm').removeAttribute('hidden');
-    btn.setAttribute('hidden', '');
-    document.getElementById('imbibeNotes').focus();
+    fetch('/api/auth').then(r => {
+      if (r.ok) {
+        document.getElementById('imbibeConfirm').removeAttribute('hidden');
+        btn.setAttribute('hidden', '');
+        document.getElementById('imbibeNotes').focus();
+      } else {
+        promptImbibeAuth(btn, () => btn.click());
+      }
+    });
   });
 
   document.getElementById('imbibeCancelBtn').addEventListener('click', () => {
@@ -1685,9 +1737,15 @@ function setupWineImbibeButton(wineId) {
   const btn = document.getElementById('wineImbibeBtn');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    document.getElementById('wineImbibeConfirm').removeAttribute('hidden');
-    btn.setAttribute('hidden', '');
-    document.getElementById('wineImbibeNotes').focus();
+    fetch('/api/auth').then(r => {
+      if (r.ok) {
+        document.getElementById('wineImbibeConfirm').removeAttribute('hidden');
+        btn.setAttribute('hidden', '');
+        document.getElementById('wineImbibeNotes').focus();
+      } else {
+        promptImbibeAuth(btn, () => btn.click());
+      }
+    });
   });
   document.getElementById('wineImbibeCancelBtn').addEventListener('click', () => {
     document.getElementById('wineImbibeConfirm').setAttribute('hidden', '');
