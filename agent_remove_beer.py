@@ -12,17 +12,22 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 import db
+import remote
 
 if len(sys.argv) < 2:
     print("Usage: python agent_remove_beer.py <id>")
     sys.exit(1)
 
 beer_id = int(sys.argv[1])
+remote.pull()
 beer = db.get_beer(beer_id)
 
 if not beer:
     print(f"No beer found with id={beer_id}")
     sys.exit(1)
 
-db.delete_beer(beer_id)
+remote.call('DELETE', f'/api/beers/{beer_id}')
 print(f"Removed '{beer['name']}' (id={beer_id})")
+
+remote.pull()
+remote.publish(f"Remove {beer['name']} ({beer['brewer']})")

@@ -23,6 +23,7 @@ import difflib
 
 sys.path.insert(0, os.path.dirname(__file__))
 import db
+import remote
 
 if len(sys.argv) < 2:
     print("Usage: python agent_add_wine.py '<json>'")
@@ -36,7 +37,7 @@ for field in required:
         print(f"Error: '{field}' is required")
         sys.exit(1)
 
-db.init_db()
+remote.pull()
 
 # Check producer against existing entries
 import sqlite3
@@ -59,39 +60,14 @@ elif not exact and existing_producers and not data.get('force'):
         print(f"If it's genuinely a new producer, re-run with force=true in the JSON.")
         sys.exit(1)
 
-wine_id = db.insert_wine(
-    name=data['name'],
-    producer=data['producer'],
-    year=data.get('year'),
-    region=data.get('region'),
-    appellation=data.get('appellation'),
-    varietal=data.get('varietal'),
-    wine_type=data.get('wine_type'),
-    quantity=data.get('quantity', 1),
-    date_bottled=data.get('date_bottled'),
-    drink_after=data.get('drink_after'),
-    drink_by=data.get('drink_by'),
-    research=data.get('research'),
-    considerations=data.get('considerations'),
-    image_url=data.get('image_url'),
-    rating=data.get('rating'),
-    rating_source=data.get('rating_source'),
-    label=data.get('label'),
-    grapeminds_id=data.get('grapeminds_id'),
-    flavor_profile=data.get('flavor_profile'),
-)
+payload = {k: data.get(k) for k in (
+    'name', 'producer', 'year', 'region', 'appellation', 'varietal', 'wine_type',
+    'date_bottled', 'drink_after', 'drink_by', 'research', 'considerations',
+    'image_url', 'rating', 'rating_source', 'label', 'grapeminds_id', 'flavor_profile')}
+payload.update(quantity=data.get('quantity', 1), skip_research=True)
+wine_id = remote.call('POST', '/api/wines', payload)['id']
 
 print(f"Added '{data['name']}' ({data['producer']}) with id={wine_id}")
 
-# Rebuild static site
-import subprocess
-repo = os.path.dirname(__file__)
-script = os.path.join(repo, 'export_static.py')
-subprocess.run([sys.executable, script], check=True)
-
-# Commit and push
-subprocess.run(['git', 'add', '-A'], cwd=repo, check=True)
-subprocess.run(['git', 'commit', '--allow-empty', '-m',
-    f"Add {data['name']} ({data['producer']})"], cwd=repo, check=True)
-subprocess.run(['git', 'push'], cwd=repo, check=True)
-print("Committed and pushed.")
+remote.pull()
+remote.publish(f"Add {data['name']} ({data['producer']})")

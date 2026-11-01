@@ -17,6 +17,7 @@ from datetime import date
 from dotenv import load_dotenv
 
 import db
+import remote
 import research_agent
 
 load_dotenv()
@@ -55,6 +56,7 @@ def flag_regressions(beer, new):
 
 
 def main():
+    remote.pull()
     beers = [b for b in db.get_all_beers() if not b.get('date_imbibed') and b.get('label') != 'Test']
     print(f'Re-researching {len(beers)} beers (skipping imbibed/test)...\n')
 

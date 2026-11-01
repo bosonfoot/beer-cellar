@@ -21,6 +21,7 @@ import difflib
 
 sys.path.insert(0, os.path.dirname(__file__))
 import db
+import remote
 
 if len(sys.argv) < 2:
     print("Usage: python agent_add_beer.py '<json>'")
@@ -34,7 +35,7 @@ for field in required:
         print(f"Error: '{field}' is required")
         sys.exit(1)
 
-db.init_db()
+remote.pull()
 
 # Check brewer against existing entries
 import sqlite3
@@ -73,33 +74,13 @@ if not image_url:
         if image_url:
             print(f"Using brewery default image for '{data['brewer']}'")
 
-beer_id = db.insert_beer(
-    name=data['name'],
-    brewer=data['brewer'],
-    year=data.get('year'),
-    abv=data.get('abv'),
-    quantity=data.get('quantity', 1),
-    date_bottled=data.get('date_bottled'),
-    drink_after=data.get('drink_after'),
-    drink_by=data.get('drink_by'),
-    research=data.get('research'),
-    food_pairings=data.get('food_pairings'),
-    considerations=data.get('considerations'),
-    image_url=image_url,
-    untappd_rating=data.get('untappd_rating'),
-)
+payload = {k: data.get(k) for k in (
+    'name', 'brewer', 'year', 'abv', 'date_bottled', 'drink_after', 'drink_by',
+    'research', 'food_pairings', 'considerations', 'untappd_rating', 'label')}
+payload.update(quantity=data.get('quantity', 1), image_url=image_url, skip_research=True)
+beer_id = remote.call('POST', '/api/beers', payload)['id']
 
 print(f"Added '{data['name']}' with id={beer_id}")
 
-# Rebuild static site
-import subprocess
-repo = os.path.dirname(__file__)
-script = os.path.join(repo, 'export_static.py')
-subprocess.run([sys.executable, script], check=True)
-
-# Commit and push
-subprocess.run(['git', 'add', '-A'], cwd=repo, check=True)
-subprocess.run(['git', 'commit', '--allow-empty', '-m',
-    f"Add {data['name']} ({data['brewer']})"], cwd=repo, check=True)
-subprocess.run(['git', 'push'], cwd=repo, check=True)
-print("Committed and pushed.")
+remote.pull()
+remote.publish(f"Add {data['name']} ({data['brewer']})")

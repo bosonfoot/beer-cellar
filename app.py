@@ -211,8 +211,9 @@ def api_add_beer():
         label=data.get('label'),
     )
     beer = enrich(db.get_beer(beer_id))
-    t = threading.Thread(target=_publish_background, args=(beer_id, data), daemon=True)
-    t.start()
+    if not data.get('skip_research'):
+        t = threading.Thread(target=_publish_background, args=(beer_id, data), daemon=True)
+        t.start()
     return jsonify(beer), 201
 
 
@@ -338,8 +339,9 @@ def api_add_wine():
         flavor_profile=data.get('flavor_profile'),
     )
     wine = enrich_wine(db.get_wine(wine_id))
-    t = threading.Thread(target=_publish_wine_background, args=(wine_id, data), daemon=True)
-    t.start()
+    if not data.get('skip_research'):
+        t = threading.Thread(target=_publish_wine_background, args=(wine_id, data), daemon=True)
+        t.start()
     return jsonify(wine), 201
 
 
