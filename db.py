@@ -165,15 +165,18 @@ def update_beer_research(beer_id, drink_after=None, drink_by=None, research=None
 
 
 def update_beer(beer_id, name, brewer, year, abv, quantity, date_bottled,
-                drink_after, drink_by, research, food_pairings, considerations, label):
+                drink_after, drink_by, research, food_pairings, considerations, label,
+                untappd_rating=None):
     with get_conn() as conn:
         conn.execute('''
             UPDATE beers SET name=?, brewer=?, year=?, abv=?, quantity=?,
                 date_bottled=?, drink_after=?, drink_by=?, research=?,
-                food_pairings=?, considerations=?, label=?
+                food_pairings=?, considerations=?, label=?,
+                untappd_rating=COALESCE(?, untappd_rating)
             WHERE id=?
         ''', (name, brewer, year, abv, quantity, date_bottled,
-              drink_after, drink_by, research, food_pairings, considerations, label, beer_id))
+              drink_after, drink_by, research, food_pairings, considerations, label,
+              untappd_rating, beer_id))
 
 
 def update_image_url(beer_id, image_url):

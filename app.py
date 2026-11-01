@@ -258,6 +258,7 @@ def api_update_beer(beer_id):
         food_pairings=data.get('food_pairings'),
         considerations=data.get('considerations'),
         label=data.get('label'),
+        untappd_rating=data.get('untappd_rating'),
     )
     return jsonify(enrich(db.get_beer(beer_id)))
 

@@ -15,18 +15,24 @@ import shutil
 BASE = os.path.dirname(__file__)
 
 def export():
-    import db
-    db.init_db()
-
-    from app import enrich, enrich_wine
-
     docs = os.path.join(BASE, 'docs')
     docs_static = os.path.join(docs, 'static')
     os.makedirs(docs_static, exist_ok=True)
 
-    # 1. Enrich beers and wines (adds image_path via resolve_image / resolve_wine_image)
-    beers = [enrich(b) for b in db.get_all_beers()]
-    wines = [enrich_wine(w) for w in db.get_all_wines()]
+    # 1. Beers and wines: from the live site if CELLAR_SOURCE_URL is set (the live
+    #    site is the master database), otherwise from the local DB. Both paths give
+    #    enriched records (image_path via resolve_image / resolve_wine_image).
+    source_url = os.environ.get('CELLAR_SOURCE_URL')
+    if source_url:
+        import requests
+        beers = requests.get(source_url.rstrip('/') + '/api/beers', timeout=60).json()
+        wines = requests.get(source_url.rstrip('/') + '/api/wines', timeout=60).json()
+    else:
+        import db
+        db.init_db()
+        from app import enrich, enrich_wine
+        beers = [enrich(b) for b in db.get_all_beers()]
+        wines = [enrich_wine(w) for w in db.get_all_wines()]
 
     # 2. Write cellar.json — strip leading / from image_path so paths are
     #    relative on GitHub Pages (e.g. static/images/... not /static/images/...)
