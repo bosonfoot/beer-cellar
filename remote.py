@@ -42,7 +42,7 @@ def call(method, path, payload=None):
     r = _login().request(method, BASE_URL + path, json=payload, timeout=120)
     if not r.ok:
         sys.exit(f'{method} {path} failed: {r.status_code} {r.text[:200]}')
-    return r.json()
+    return r.json() if r.content else None
 
 
 def _replace_table(conn, table, rows):
