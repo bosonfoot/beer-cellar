@@ -5,17 +5,71 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 // ── Status & Days Left logic ──────────────────────────────────────────────────
 
-function getStatus(drinkAfter, drinkBy, imbibed, label) {
+// Status from the optional peak window: "At Peak" inside it, "Peak Approaching" in the
+// 60 days before it, otherwise null (the regular drink window decides).
+function peakStatus(peakFrom, peakTo) {
+  if (!peakFrom) return null;
+  const month = new Date().toISOString().slice(0, 7);
+  const from = peakFrom.slice(0, 7);
+  const to = (peakTo || peakFrom).slice(0, 7);
+  if (month >= from && month <= to) return 'At Peak';
+  if (month < from && daysLeft(from) <= 60) return 'Peak Approaching';
+  return null;
+}
+
+function getStatus(drinkAfter, drinkBy, imbibed, label, peakFrom, peakTo) {
   if (label) return label;
   if (imbibed) return 'Happily Imbibed';
   const today = new Date().toISOString().slice(0, 10);
-  if (!drinkAfter && !drinkBy) return 'Unknown';
+  if (!drinkAfter && !drinkBy && !peakFrom) return 'Unknown';
   if (drinkBy && today > drinkBy) return 'Past Peak';
+  const peak = peakStatus(peakFrom, peakTo);
+  if (peak) return peak;
   if (drinkAfter && today >= drinkAfter) return 'Drink Now';
   if (drinkAfter) {
-    return daysLeft(drinkAfter) <= 60 ? 'Peak Approaching' : 'Aging';
+    // With a peak window set, "Peak Approaching" means the peak, not becoming drinkable
+    return !peakFrom && daysLeft(drinkAfter) <= 60 ? 'Peak Approaching' : 'Aging';
   }
+  if (peakFrom) return today.slice(0, 7) < peakFrom.slice(0, 7) ? 'Aging' : 'Drink Now';
   return 'Unknown';
+}
+
+// Status for an element carrying data-after / data-by / data-peak-from / ... attributes
+function statusOf(el) {
+  const d = el.dataset;
+  return getStatus(d.after, d.by, d.imbibed, d.label, d.peakFrom, d.peakTo);
+}
+
+function setWindowData(el, x) {
+  el.dataset.after = x.drink_after || '';
+  el.dataset.by = x.drink_by || '';
+  el.dataset.peakFrom = x.peak_from || '';
+  el.dataset.peakTo = x.peak_to || '';
+}
+
+function peakAttrs(x) {
+  return `data-peak-from="${x.peak_from || ''}" data-peak-to="${x.peak_to || ''}"`;
+}
+
+// Table cell text, e.g. "2027-03 – 2027-05"
+function peakCellText(x) {
+  if (!x.peak_from) return '—';
+  return x.peak_to && x.peak_to !== x.peak_from ? `${x.peak_from} – ${x.peak_to}` : x.peak_from;
+}
+
+// Friendly text, e.g. "Mar 2027 – May 2027"
+function peakWindowText(x) {
+  if (!x.peak_from) return null;
+  return x.peak_to && x.peak_to !== x.peak_from
+    ? `${formatDate(x.peak_from)} – ${formatDate(x.peak_to)}`
+    : formatDate(x.peak_from);
+}
+
+// Card badge countdown, e.g. "Peak in 45 days"; falls back when there's no future target date
+function countdownText(prefix, date, fallback) {
+  const n = daysLeft(date);
+  if (n === null || n < 0) return fallback;
+  return `${prefix} ${n} ${n === 1 ? 'day' : 'days'}`;
 }
 
 // Returns days remaining until drinkBy, or null if not applicable.
@@ -37,6 +91,7 @@ function monthsBetween(a, b) {
 
 const STATUS_CLASS = {
   'Drink Now':        'badge-drink-now',
+  'At Peak':          'badge-at-peak',
   'Peak Approaching': 'badge-approaching',
   'Aging':            'badge-aging',
   'Past Peak':        'badge-past-peak',
@@ -67,7 +122,7 @@ function applyBadges() {
   applyNewBadges();
 
   document.querySelectorAll('.badge[data-after]:not(.wine-badge)').forEach(el => {
-    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
+    const status = statusOf(el);
     el.textContent = status;
     el.className = 'badge ' + (STATUS_CLASS[status] || 'badge-unknown');
   });
@@ -78,8 +133,8 @@ function applyBadges() {
 
   function applyDaysEl(el, isCell) {
     DAY_CLASSES.forEach(c => el.classList.remove(c));
-    const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
-    if (status === 'Drink Now') {
+    const status = statusOf(el);
+    if (status === 'Drink Now' || status === 'At Peak') {
       const d = daysLeft(el.dataset.by);
       if (d !== null) {
         el.textContent = d;
@@ -161,7 +216,7 @@ function cellValue(row, col) {
     return td ? td.dataset.sortVal || '' : '';
   }
   const cells = row.querySelectorAll('td');
-  const colIndex = { name: 1, year: 2, brewer: 3, abv: 4, untappd_rating: 5, drink_after: 6, drink_by: 7 };
+  const colIndex = { name: 1, year: 2, brewer: 3, abv: 4, untappd_rating: 5, drink_after: 6, peak: 7, drink_by: 8 };
   const idx = colIndex[col];
   if (idx === undefined) return '';
   const text = cells[idx].textContent.trim();
@@ -305,7 +360,7 @@ function autoLink(text) {
 }
 
 function renderModal(beer) {
-  const status = getStatus(beer.drink_after, beer.drink_by, beer.date_imbibed, beer.label);
+  const status = getStatus(beer.drink_after, beer.drink_by, beer.date_imbibed, beer.label, beer.peak_from, beer.peak_to);
   const badgeClass = STATUS_CLASS[status] || 'badge-unknown';
   const imgSrc = beer.image_path || '/static/images/default.svg';
 
@@ -347,6 +402,11 @@ function renderModal(beer) {
         <div class="modal-date-label">Drink After</div>
         <div class="modal-date-value">${formatDate(beer.drink_after)}</div>
       </div>
+      ${beer.peak_from ? `
+      <div class="modal-date-item">
+        <div class="modal-date-label">Peak</div>
+        <div class="modal-date-value">${peakWindowText(beer)}</div>
+      </div>` : ''}
       <div class="modal-date-item">
         <div class="modal-date-label">Drink By</div>
         <div class="modal-date-value">${formatDate(beer.drink_by)}</div>
@@ -645,6 +705,10 @@ function renderEditForm(beer) {
       <input class="add-field" id="ef-qty" type="number" min="1" value="${beer.quantity || 1}">
       <label>Drink after</label>
       <input class="add-field" id="ef-drink-after" placeholder="YYYY-MM" value="${beer.drink_after || ''}">
+      <label>Peak from</label>
+      <input class="add-field" id="ef-peak-from" placeholder="YYYY-MM" value="${beer.peak_from || ''}">
+      <label>Peak to</label>
+      <input class="add-field" id="ef-peak-to" placeholder="YYYY-MM" value="${beer.peak_to || ''}">
       <label>Drink by</label>
       <input class="add-field" id="ef-drink-by" placeholder="YYYY-MM" value="${beer.drink_by || ''}">
       <label>Research notes</label>
@@ -681,6 +745,8 @@ function renderEditForm(beer) {
       date_bottled,
       drink_after:     document.getElementById('ef-drink-after').value.trim() || null,
       drink_by:        document.getElementById('ef-drink-by').value.trim() || null,
+      peak_from:       document.getElementById('ef-peak-from').value.trim() || null,
+      peak_to:         document.getElementById('ef-peak-to').value.trim() || null,
       research:        document.getElementById('ef-research').value.trim() || null,
       food_pairings:   document.getElementById('ef-food').value.trim() || null,
       considerations:  document.getElementById('ef-considerations').value.trim() || null,
@@ -788,6 +854,8 @@ function syncCards() {
     if (year && year !== '—') metaParts.push(`<span>${year}</span>`);
     if (abv && abv !== '—') metaParts.push(`<span>${abv}</span>`);
     if (rating && rating !== '—') metaParts.push(`<span class="card-rating">${rating}</span>`);
+    const peakText = peakWindowText({ peak_from: badgeEl.dataset.peakFrom, peak_to: badgeEl.dataset.peakTo });
+    if (peakText) metaParts.push(`<span>Peak ${peakText}</span>`);
 
     card.innerHTML = `
       <div class="card-img-wrap">
@@ -803,10 +871,14 @@ function syncCards() {
         <div class="card-window">
           <span class="card-days"
                 data-by="${daysTd.dataset.by}"
+                data-peak-from="${daysTd.dataset.peakFrom}"
+                data-peak-to="${daysTd.dataset.peakTo}"
                 data-after="${daysTd.dataset.after}"
                 data-imbibed="${daysTd.dataset.imbibed}"></span>
           <span data-after="${badgeEl.dataset.after}"
                 data-by="${badgeEl.dataset.by}"
+                data-peak-from="${badgeEl.dataset.peakFrom}"
+                data-peak-to="${badgeEl.dataset.peakTo}"
                 data-imbibed="${badgeEl.dataset.imbibed}"
                 class="${badgeEl.className}">${badgeEl.textContent}</span>
         </div>
@@ -824,8 +896,8 @@ function syncCards() {
       const dw = d === 1 ? 'day' : 'days';
       const status = badgeEl.textContent;
       if (status === 'Drink Now')        cardBadge.textContent = `Drink within ${d} ${dw}`;
-      else if (status === 'Peak Approaching') cardBadge.textContent = `Peak in ${d} ${dw}`;
-      else if (status === 'Aging')       cardBadge.textContent = `Ready in ${d} ${dw}`;
+      else if (status === 'Peak Approaching') cardBadge.textContent = countdownText('Peak in', badgeEl.dataset.peakFrom || badgeEl.dataset.after, status);
+      else if (status === 'Aging')       cardBadge.textContent = countdownText('Ready in', badgeEl.dataset.after, status);
     }
     // Hide the now-redundant standalone days number
     cardDays.hidden = true;
@@ -897,6 +969,29 @@ sortTable();
 setView(getPreferredView());
 document.getElementById('tableBody').classList.add('ready');
 
+// ── Refresh a row after an edit or research update ────────────────────────────
+
+function updateRowFromResearch(beer) {
+  const row = document.querySelector(`tr.beer-row[data-id="${beer.id}"]`);
+  if (!row) return;
+
+  const afterTd = row.querySelector('td.col-drink-after');
+  const peakTd = row.querySelector('td.col-peak');
+  const byTd = row.querySelector('td.col-drink-by');
+  const daysTd = row.querySelector('td.col-days-left');
+  const badgeEl = row.querySelector('.badge');
+
+  if (afterTd) afterTd.textContent = beer.drink_after || '—';
+  if (peakTd)  peakTd.textContent  = peakCellText(beer);
+  if (byTd)    byTd.textContent    = beer.drink_by    || '—';
+  if (daysTd)  setWindowData(daysTd, beer);
+  if (badgeEl) setWindowData(badgeEl, beer);
+
+  applyBadges();
+  sortTable();
+  syncCards();
+}
+
 // ── Inject new row into the live table ────────────────────────────────────────
 
 function injectNewBeerRow(beer) {
@@ -923,15 +1018,16 @@ function injectNewBeerRow(beer) {
     <td class="col-abv">${abvText}</td>
     <td class="col-rating">${ratingText}</td>
     <td class="col-drink-after">${beer.drink_after || '—'}</td>
+    <td class="col-peak">${peakCellText(beer)}</td>
     <td class="col-drink-by">${beer.drink_by || '—'}</td>
     <td class="col-days-left"
-        data-by="${beer.drink_by || ''}"
+        data-by="${beer.drink_by || ''}" ${peakAttrs(beer)}
         data-after="${beer.drink_after || ''}"
         data-imbibed="${beer.date_imbibed || ''}"
         data-label="${beer.label || ''}">—</td>
     <td><span class="badge"
               data-after="${beer.drink_after || ''}"
-              data-by="${beer.drink_by || ''}"
+              data-by="${beer.drink_by || ''}" ${peakAttrs(beer)}
               data-imbibed="${beer.date_imbibed || ''}"
               data-label="${beer.label || ''}"></span></td>`;
 
@@ -1327,33 +1423,6 @@ function injectNewBeerRow(beer) {
     }, 3000);
   }
 
-  function updateRowFromResearch(beer) {
-    const row = document.querySelector(`tr.beer-row[data-id="${beer.id}"]`);
-    if (!row) return;
-
-    // Update date cells
-    const afterTd = row.querySelector('td.col-drink-after');
-    const byTd = row.querySelector('td.col-drink-by');
-    const daysTd = row.querySelector('td.col-days-left');
-    const badgeEl = row.querySelector('.badge');
-
-    if (afterTd) afterTd.textContent = beer.drink_after || '—';
-    if (byTd)    byTd.textContent    = beer.drink_by    || '—';
-
-    if (daysTd) {
-      daysTd.dataset.after = beer.drink_after || '';
-      daysTd.dataset.by    = beer.drink_by    || '';
-    }
-    if (badgeEl) {
-      badgeEl.dataset.after = beer.drink_after || '';
-      badgeEl.dataset.by    = beer.drink_by    || '';
-    }
-
-    applyBadges();
-    sortTable();
-    syncCards();
-  }
-
   // ── Event wiring ─────────────────────────────────────────────────────────
 
   document.getElementById('addBeerBtn').addEventListener('click', openAddBeer);
@@ -1372,6 +1441,7 @@ function injectNewBeerRow(beer) {
 
 const WINE_STATUS_CLASS = {
   'Drink Now':        'badge-drink-now',
+  'At Peak':          'badge-at-peak',
   'Peak Approaching': 'badge-approaching',
   'Aging':            'badge-aging',
   'Past Peak':        'badge-past-peak',
@@ -1380,30 +1450,27 @@ const WINE_STATUS_CLASS = {
   'Test':             'badge-test',
 };
 
-function getWineStatus(drinkAfter, drinkBy, imbibed, label) {
-  if (label) return label;
-  if (imbibed) return 'Happily Imbibed';
-  const today = new Date().toISOString().slice(0, 10);
-  if (!drinkAfter && !drinkBy) return 'Not Set';
-  if (drinkBy && today > drinkBy) return 'Past Peak';
-  if (drinkAfter && today >= drinkAfter) return 'Drink Now';
-  if (drinkAfter) {
-    return daysLeft(drinkAfter) <= 60 ? 'Peak Approaching' : 'Aging';
-  }
-  return 'Not Set';
+function getWineStatus(drinkAfter, drinkBy, imbibed, label, peakFrom, peakTo) {
+  const status = getStatus(drinkAfter, drinkBy, imbibed, label, peakFrom, peakTo);
+  return status === 'Unknown' ? 'Not Set' : status;
+}
+
+function wineStatusOf(el) {
+  const d = el.dataset;
+  return getWineStatus(d.after, d.by, d.imbibed, d.label, d.peakFrom, d.peakTo);
 }
 
 function applyWineBadges() {
   document.querySelectorAll('.wine-badge[data-after]').forEach(el => {
-    const status = getWineStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
+    const status = wineStatusOf(el);
     el.textContent = status;
     el.className = 'badge wine-badge ' + (WINE_STATUS_CLASS[status] || 'badge-not-set');
   });
   document.querySelectorAll('td.wine-days').forEach(td => {
     const DAY_CLASSES = ['days-drink-now', 'days-approaching', 'days-aging', 'days-soon', 'days-urgent'];
     DAY_CLASSES.forEach(c => td.classList.remove(c));
-    const status = getWineStatus(td.dataset.after, td.dataset.by, td.dataset.imbibed, td.dataset.label);
-    if (status === 'Drink Now') {
+    const status = wineStatusOf(td);
+    if (status === 'Drink Now' || status === 'At Peak') {
       const d = daysLeft(td.dataset.by);
       if (d !== null) {
         td.textContent = d;
@@ -1440,7 +1507,7 @@ function wineCellValue(row, col) {
     return td ? td.dataset.sortVal || '' : '';
   }
   const cells = row.querySelectorAll('td');
-  const colIndex = { name: 1, year: 2, producer: 3, region: 4, varietal: 5, drink_after: 6, drink_by: 7 };
+  const colIndex = { name: 1, year: 2, producer: 3, region: 4, varietal: 5, drink_after: 6, peak: 7, drink_by: 8 };
   const idx = colIndex[col];
   if (idx === undefined) return '';
   const text = cells[idx].textContent.trim();
@@ -1546,6 +1613,8 @@ function syncWineCards() {
     const metaParts = [];
     if (year && year !== '—') metaParts.push(`<span>${year}</span>`);
     if (rating && rating !== '—') metaParts.push(`<span class="card-rating">${rating}</span>`);
+    const peakText = badgeEl && peakWindowText({ peak_from: badgeEl.dataset.peakFrom, peak_to: badgeEl.dataset.peakTo });
+    if (peakText) metaParts.push(`<span>Peak ${peakText}</span>`);
 
     card.innerHTML = `
       <div class="card-img-wrap">
@@ -1561,11 +1630,15 @@ function syncWineCards() {
         <div class="card-window">
           <span class="card-days"
                 data-by="${daysTd ? daysTd.dataset.by : ''}"
+                data-peak-from="${daysTd ? daysTd.dataset.peakFrom : ''}"
+                data-peak-to="${daysTd ? daysTd.dataset.peakTo : ''}"
                 data-after="${daysTd ? daysTd.dataset.after : ''}"
                 data-imbibed="${daysTd ? daysTd.dataset.imbibed : ''}"></span>
           <span class="badge wine-badge ${badgeEl ? badgeEl.className.replace('badge wine-badge ', '') : ''}"
                 data-after="${badgeEl ? badgeEl.dataset.after : ''}"
                 data-by="${badgeEl ? badgeEl.dataset.by : ''}"
+                data-peak-from="${badgeEl ? badgeEl.dataset.peakFrom : ''}"
+                data-peak-to="${badgeEl ? badgeEl.dataset.peakTo : ''}"
                 data-imbibed="${badgeEl ? badgeEl.dataset.imbibed : ''}">${badgeEl ? badgeEl.textContent : ''}</span>
         </div>
       </div>`;
@@ -1581,8 +1654,8 @@ function syncWineCards() {
       const dw = d === 1 ? 'day' : 'days';
       const status = badgeEl.textContent;
       if (status === 'Drink Now')        cardBadge.textContent = `Drink within ${d} ${dw}`;
-      else if (status === 'Peak Approaching') cardBadge.textContent = `Peak in ${d} ${dw}`;
-      else if (status === 'Aging')       cardBadge.textContent = `Ready in ${d} ${dw}`;
+      else if (status === 'Peak Approaching') cardBadge.textContent = countdownText('Peak in', badgeEl.dataset.peakFrom || badgeEl.dataset.after, status);
+      else if (status === 'Aging')       cardBadge.textContent = countdownText('Ready in', badgeEl.dataset.after, status);
     }
     cardDays.hidden = true;
 
@@ -1648,7 +1721,7 @@ function setupWineCardSort() {
 // ── Wine modal ────────────────────────────────────────────────────────────────
 
 function renderWineModal(wine) {
-  const status = getWineStatus(wine.drink_after, wine.drink_by, wine.date_imbibed, wine.label);
+  const status = getWineStatus(wine.drink_after, wine.drink_by, wine.date_imbibed, wine.label, wine.peak_from, wine.peak_to);
   const badgeClass = WINE_STATUS_CLASS[status] || 'badge-not-set';
   const imgSrc = wine.image_path || '/static/images/default.svg';
 
@@ -1682,6 +1755,7 @@ function renderWineModal(wine) {
       ${wine.varietal ? `<div class="modal-date-item"><div class="modal-date-label">Varietal</div><div class="modal-date-value">${esc(wine.varietal)}</div></div>` : ''}
       ${wine.rating != null ? `<div class="modal-date-item"><div class="modal-date-label">Rating</div><div class="modal-date-value">${Math.round(wine.rating)}${wine.rating_source ? ` <span style="font-size:0.8em;color:var(--text-muted)">(${esc(wine.rating_source)})</span>` : ''}</div></div>` : ''}
       <div class="modal-date-item"><div class="modal-date-label">Drink After</div><div class="modal-date-value">${formatDate(wine.drink_after)}</div></div>
+      ${wine.peak_from ? `<div class="modal-date-item"><div class="modal-date-label">Peak</div><div class="modal-date-value">${peakWindowText(wine)}</div></div>` : ''}
       <div class="modal-date-item"><div class="modal-date-label">Drink By</div><div class="modal-date-value">${formatDate(wine.drink_by)}</div></div>
       <div class="modal-date-item"><div class="modal-date-label">Added</div><div class="modal-date-value">${formatDate(wine.date_added)}</div></div>
       ${wine.quantity > 1 ? `<div class="modal-date-item"><div class="modal-date-label">Bottles</div><div class="modal-date-value">${wine.quantity}</div></div>` : ''}
@@ -1857,6 +1931,10 @@ function renderWineEditForm(wine) {
       <input class="add-field" id="wef-qty" type="number" min="1" value="${wine.quantity || 1}">
       <label>Drink after</label>
       <input class="add-field" id="wef-drink-after" placeholder="YYYY-MM-DD" value="${wine.drink_after || ''}">
+      <label>Peak from</label>
+      <input class="add-field" id="wef-peak-from" placeholder="YYYY-MM" value="${wine.peak_from || ''}">
+      <label>Peak to</label>
+      <input class="add-field" id="wef-peak-to" placeholder="YYYY-MM" value="${wine.peak_to || ''}">
       <label>Drink by</label>
       <input class="add-field" id="wef-drink-by" placeholder="YYYY-MM-DD" value="${wine.drink_by || ''}">
       <label>Window notes</label>
@@ -1885,6 +1963,8 @@ function renderWineEditForm(wine) {
       quantity:      parseInt(document.getElementById('wef-qty').value) || 1,
       drink_after:   document.getElementById('wef-drink-after').value.trim() || null,
       drink_by:      document.getElementById('wef-drink-by').value.trim() || null,
+      peak_from:     document.getElementById('wef-peak-from').value.trim() || null,
+      peak_to:       document.getElementById('wef-peak-to').value.trim() || null,
       research:      document.getElementById('wef-research').value.trim() || null,
       considerations:document.getElementById('wef-considerations').value.trim() || null,
       label:         document.getElementById('wef-label').value.trim() || null,
@@ -1960,15 +2040,16 @@ function injectNewWineRow(wine) {
     <td class="col-region">${esc(wine.region || '—')}</td>
     <td class="col-varietal">${esc(wine.varietal || '—')}</td>
     <td class="col-drink-after">${wine.drink_after || '—'}</td>
+    <td class="col-peak">${peakCellText(wine)}</td>
     <td class="col-drink-by">${wine.drink_by || '—'}</td>
     <td class="col-days-left wine-days"
-        data-by="${wine.drink_by || ''}"
+        data-by="${wine.drink_by || ''}" ${peakAttrs(wine)}
         data-after="${wine.drink_after || ''}"
         data-imbibed="${wine.date_imbibed || ''}"
         data-label="${wine.label || ''}">—</td>
     <td><span class="badge wine-badge"
               data-after="${wine.drink_after || ''}"
-              data-by="${wine.drink_by || ''}"
+              data-by="${wine.drink_by || ''}" ${peakAttrs(wine)}
               data-imbibed="${wine.date_imbibed || ''}"
               data-label="${wine.label || ''}"></span></td>`;
 
@@ -1990,13 +2071,15 @@ function updateWineRowFromResearch(wine) {
   const row = document.querySelector(`tr.wine-row[data-id="${wine.id}"]`);
   if (!row) return;
   const afterTd = row.querySelector('td.col-drink-after');
+  const peakTd = row.querySelector('td.col-peak');
   const byTd = row.querySelector('td.col-drink-by');
   const daysTd = row.querySelector('td.wine-days');
   const badgeEl = row.querySelector('.wine-badge');
   if (afterTd) afterTd.textContent = wine.drink_after || '—';
+  if (peakTd) peakTd.textContent = peakCellText(wine);
   if (byTd) byTd.textContent = wine.drink_by || '—';
-  if (daysTd) { daysTd.dataset.after = wine.drink_after || ''; daysTd.dataset.by = wine.drink_by || ''; }
-  if (badgeEl) { badgeEl.dataset.after = wine.drink_after || ''; badgeEl.dataset.by = wine.drink_by || ''; }
+  if (daysTd) setWindowData(daysTd, wine);
+  if (badgeEl) setWindowData(badgeEl, wine);
   applyWineBadges();
   sortWineTable();
   syncWineCards();

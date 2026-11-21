@@ -48,6 +48,8 @@ def init_db():
             ('imbibe_notes',    'ALTER TABLE beers ADD COLUMN imbibe_notes TEXT'),
             ('label',           'ALTER TABLE beers ADD COLUMN label TEXT'),
             ('parent_id',       'ALTER TABLE beers ADD COLUMN parent_id INTEGER'),
+            ('peak_from',       'ALTER TABLE beers ADD COLUMN peak_from TEXT'),
+            ('peak_to',         'ALTER TABLE beers ADD COLUMN peak_to TEXT'),
         ]
         for col, sql in migrations:
             if col not in cols:
@@ -82,7 +84,10 @@ def init_db():
             )
         ''')
         wine_cols = [r[1] for r in conn.execute("PRAGMA table_info(wines)").fetchall()]
-        wine_migrations = []
+        wine_migrations = [
+            ('peak_from', 'ALTER TABLE wines ADD COLUMN peak_from TEXT'),
+            ('peak_to',   'ALTER TABLE wines ADD COLUMN peak_to TEXT'),
+        ]
         for col, sql in wine_migrations:
             if col not in wine_cols:
                 conn.execute(sql)
@@ -118,14 +123,16 @@ def get_beer(beer_id):
 
 def insert_beer(name, brewer, year=None, abv=None, quantity=1, date_bottled=None, drink_after=None,
                 drink_by=None, research=None, food_pairings=None, considerations=None,
-                image_url=None, untappd_rating=None, label=None):
+                image_url=None, untappd_rating=None, label=None, peak_from=None, peak_to=None):
     with get_conn() as conn:
         cursor = conn.execute('''
             INSERT INTO beers (name, year, brewer, abv, quantity, date_bottled, drink_after, drink_by,
-                               research, food_pairings, considerations, image_url, untappd_rating, label)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               research, food_pairings, considerations, image_url, untappd_rating, label,
+                               peak_from, peak_to)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (name, year, brewer, abv, quantity, date_bottled, drink_after, drink_by,
-              research, food_pairings, considerations, image_url, untappd_rating, label))
+              research, food_pairings, considerations, image_url, untappd_rating, label,
+              peak_from, peak_to))
         return cursor.lastrowid
 
 
@@ -139,12 +146,14 @@ def imbibe_beer(beer_id, notes=None):
             cursor = conn.execute(
                 '''INSERT INTO beers (name, year, brewer, abv, quantity, date_bottled,
                        drink_after, drink_by, research, food_pairings, considerations,
-                       image_url, untappd_rating, label, date_imbibed, imbibe_notes, parent_id)
-                   VALUES (?,?,?,?,1,?,?,?,?,?,?,?,?,?,date('now'),?,?)''',
+                       image_url, untappd_rating, label, peak_from, peak_to,
+                       date_imbibed, imbibe_notes, parent_id)
+                   VALUES (?,?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,date('now'),?,?)''',
                 (beer['name'], beer['year'], beer['brewer'], beer['abv'],
                  beer['date_bottled'], beer['drink_after'], beer['drink_by'],
                  beer['research'], beer['food_pairings'], beer['considerations'],
                  beer['image_url'], beer['untappd_rating'], beer['label'],
+                 beer['peak_from'], beer['peak_to'],
                  notes, beer_id)
             )
             return cursor.lastrowid
@@ -156,27 +165,28 @@ def imbibe_beer(beer_id, notes=None):
             return None
 
 
-def update_beer_research(beer_id, drink_after=None, drink_by=None, research=None):
+def update_beer_research(beer_id, drink_after=None, drink_by=None, research=None,
+                         peak_from=None, peak_to=None):
     with get_conn() as conn:
         conn.execute(
-            'UPDATE beers SET drink_after=?, drink_by=?, research=? WHERE id=?',
-            (drink_after, drink_by, research, beer_id)
+            'UPDATE beers SET drink_after=?, drink_by=?, research=?, peak_from=?, peak_to=? WHERE id=?',
+            (drink_after, drink_by, research, peak_from, peak_to, beer_id)
         )
 
 
 def update_beer(beer_id, name, brewer, year, abv, quantity, date_bottled,
                 drink_after, drink_by, research, food_pairings, considerations, label,
-                untappd_rating=None):
+                untappd_rating=None, peak_from=None, peak_to=None):
     with get_conn() as conn:
         conn.execute('''
             UPDATE beers SET name=?, brewer=?, year=?, abv=?, quantity=?,
                 date_bottled=?, drink_after=?, drink_by=?, research=?,
                 food_pairings=?, considerations=?, label=?,
-                untappd_rating=COALESCE(?, untappd_rating)
+                untappd_rating=COALESCE(?, untappd_rating), peak_from=?, peak_to=?
             WHERE id=?
         ''', (name, brewer, year, abv, quantity, date_bottled,
               drink_after, drink_by, research, food_pairings, considerations, label,
-              untappd_rating, beer_id))
+              untappd_rating, peak_from, peak_to, beer_id))
 
 
 def update_image_url(beer_id, image_url):
@@ -223,18 +233,18 @@ def insert_wine(name, producer, year=None, region=None, appellation=None, variet
                 wine_type=None, quantity=1, date_bottled=None, drink_after=None,
                 drink_by=None, research=None, considerations=None, image_url=None,
                 rating=None, rating_source=None, label=None, grapeminds_id=None,
-                flavor_profile=None):
+                flavor_profile=None, peak_from=None, peak_to=None):
     with get_conn() as conn:
         cursor = conn.execute('''
             INSERT INTO wines (name, year, producer, region, appellation, varietal, wine_type,
                                quantity, date_bottled, drink_after, drink_by, research,
                                considerations, image_url, rating, rating_source, label,
-                               grapeminds_id, flavor_profile)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               grapeminds_id, flavor_profile, peak_from, peak_to)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (name, year, producer, region, appellation, varietal, wine_type,
               quantity, date_bottled, drink_after, drink_by, research,
               considerations, image_url, rating, rating_source, label,
-              grapeminds_id, flavor_profile))
+              grapeminds_id, flavor_profile, peak_from, peak_to))
         return cursor.lastrowid
 
 
@@ -249,14 +259,16 @@ def imbibe_wine(wine_id, notes=None):
                 '''INSERT INTO wines (name, year, producer, region, appellation, varietal,
                        wine_type, quantity, date_bottled, drink_after, drink_by, research,
                        considerations, image_url, rating, rating_source, label,
-                       grapeminds_id, flavor_profile, date_imbibed, imbibe_notes, parent_id)
-                   VALUES (?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,date('now'),?,?)''',
+                       grapeminds_id, flavor_profile, peak_from, peak_to,
+                       date_imbibed, imbibe_notes, parent_id)
+                   VALUES (?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?,?,date('now'),?,?)''',
                 (wine['name'], wine['year'], wine['producer'], wine['region'],
                  wine['appellation'], wine['varietal'], wine['wine_type'],
                  wine['date_bottled'], wine['drink_after'], wine['drink_by'],
                  wine['research'], wine['considerations'], wine['image_url'],
                  wine['rating'], wine['rating_source'], wine['label'],
                  wine['grapeminds_id'], wine['flavor_profile'],
+                 wine['peak_from'], wine['peak_to'],
                  notes, wine_id)
             )
             return cursor.lastrowid
@@ -279,16 +291,17 @@ def update_wine_research(wine_id, drink_after=None, drink_by=None, research=None
 
 def update_wine(wine_id, name, producer, year, region, appellation, varietal, wine_type,
                 quantity, date_bottled, drink_after, drink_by, research, considerations,
-                rating, rating_source, label):
+                rating, rating_source, label, peak_from=None, peak_to=None):
     with get_conn() as conn:
         conn.execute('''
             UPDATE wines SET name=?, producer=?, year=?, region=?, appellation=?, varietal=?,
                 wine_type=?, quantity=?, date_bottled=?, drink_after=?, drink_by=?,
-                research=?, considerations=?, rating=?, rating_source=?, label=?
+                research=?, considerations=?, rating=?, rating_source=?, label=?,
+                peak_from=?, peak_to=?
             WHERE id=?
         ''', (name, producer, year, region, appellation, varietal, wine_type,
               quantity, date_bottled, drink_after, drink_by, research, considerations,
-              rating, rating_source, label, wine_id))
+              rating, rating_source, label, peak_from, peak_to, wine_id))
 
 
 def delete_wine(wine_id):

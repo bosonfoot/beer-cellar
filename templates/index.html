@@ -31,6 +31,7 @@
     <select id="filterStatus">
       <option value="">All statuses</option>
       <option value="Drink Now">Drink Now</option>
+      <option value="At Peak">At Peak</option>
       <option value="Peak Approaching">Peak Approaching</option>
       <option value="Aging">Aging</option>
       <option value="Past Peak">Past Peak</option>
@@ -54,6 +55,7 @@
       <option value="abv">ABV</option>
       <option value="untappd_rating">Rating</option>
       <option value="drink_after">Drink After</option>
+      <option value="peak">Peak</option>
       <option value="drink_by">Drink By</option>
     </select>
     <button id="cardSortDir" class="card-sort-dir">▲</button>
@@ -70,6 +72,7 @@
         <th data-col="abv" class="sortable">ABV <span class="sort-arrow"></span></th>
         <th data-col="untappd_rating" class="sortable col-rating">Rating <span class="sort-arrow"></span></th>
         <th data-col="drink_after" class="sortable">Drink After <span class="sort-arrow"></span></th>
+        <th data-col="peak" class="sortable">Peak <span class="sort-arrow"></span></th>
         <th data-col="drink_by" class="sortable">Drink By <span class="sort-arrow"></span></th>
         <th data-col="days_left" class="sortable">Days Left <span class="sort-arrow"></span></th>
         <th>Status</th>
@@ -96,20 +99,25 @@
         <td class="col-abv">{{ ('%.1f%%' % beer.abv) if beer.abv is not none else '—' }}</td>
         <td class="col-rating">{{ ('%.2f' % beer.untappd_rating) if beer.untappd_rating is not none else '—' }}</td>
         <td class="col-drink-after">{{ beer.drink_after or '—' }}</td>
+        <td class="col-peak">{% if beer.peak_from %}{{ beer.peak_from }}{% if beer.peak_to and beer.peak_to != beer.peak_from %} – {{ beer.peak_to }}{% endif %}{% else %}—{% endif %}</td>
         <td class="col-drink-by">{{ beer.drink_by or '—' }}</td>
         <td class="col-days-left"
             data-by="{{ beer.drink_by or '' }}"
+            data-peak-from="{{ beer.peak_from or '' }}"
+            data-peak-to="{{ beer.peak_to or '' }}"
             data-after="{{ beer.drink_after or '' }}"
             data-imbibed="{{ beer.date_imbibed or '' }}"
             data-label="{{ beer.label or '' }}">—</td>
         <td><span class="badge"
                   data-after="{{ beer.drink_after or '' }}"
                   data-by="{{ beer.drink_by or '' }}"
+            data-peak-from="{{ beer.peak_from or '' }}"
+            data-peak-to="{{ beer.peak_to or '' }}"
                   data-imbibed="{{ beer.date_imbibed or '' }}"
                   data-label="{{ beer.label or '' }}"></span></td>
       </tr>
       {% else %}
-      <tr id="emptyRow"><td colspan="9">No beers in the cellar yet.</td></tr>
+      <tr id="emptyRow"><td colspan="10">No beers in the cellar yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -128,6 +136,7 @@
     <select id="wineFilterStatus">
       <option value="">All statuses</option>
       <option value="Drink Now">Drink Now</option>
+      <option value="At Peak">At Peak</option>
       <option value="Peak Approaching">Peak Approaching</option>
       <option value="Aging">Aging</option>
       <option value="Past Peak">Past Peak</option>
@@ -150,6 +159,7 @@
       <option value="producer">Producer</option>
       <option value="region">Region</option>
       <option value="drink_after">Drink After</option>
+      <option value="peak">Peak</option>
       <option value="drink_by">Drink By</option>
     </select>
     <button id="wineCardSortDir" class="card-sort-dir">▲</button>
@@ -166,6 +176,7 @@
         <th data-col="region" class="sortable wine-sortable">Region <span class="sort-arrow"></span></th>
         <th data-col="varietal" class="sortable wine-sortable">Varietal <span class="sort-arrow"></span></th>
         <th data-col="drink_after" class="sortable wine-sortable">Drink After <span class="sort-arrow"></span></th>
+        <th data-col="peak" class="sortable wine-sortable">Peak <span class="sort-arrow"></span></th>
         <th data-col="drink_by" class="sortable wine-sortable">Drink By <span class="sort-arrow"></span></th>
         <th data-col="days_left" class="sortable wine-sortable">Days Left <span class="sort-arrow"></span></th>
         <th>Status</th>
@@ -192,20 +203,25 @@
         <td class="col-region">{{ wine.region or '—' }}</td>
         <td class="col-varietal">{{ wine.varietal or '—' }}</td>
         <td class="col-drink-after">{{ wine.drink_after or '—' }}</td>
+        <td class="col-peak">{% if wine.peak_from %}{{ wine.peak_from }}{% if wine.peak_to and wine.peak_to != wine.peak_from %} – {{ wine.peak_to }}{% endif %}{% else %}—{% endif %}</td>
         <td class="col-drink-by">{{ wine.drink_by or '—' }}</td>
         <td class="col-days-left wine-days"
             data-by="{{ wine.drink_by or '' }}"
+            data-peak-from="{{ wine.peak_from or '' }}"
+            data-peak-to="{{ wine.peak_to or '' }}"
             data-after="{{ wine.drink_after or '' }}"
             data-imbibed="{{ wine.date_imbibed or '' }}"
             data-label="{{ wine.label or '' }}">—</td>
         <td><span class="badge wine-badge"
                   data-after="{{ wine.drink_after or '' }}"
                   data-by="{{ wine.drink_by or '' }}"
+            data-peak-from="{{ wine.peak_from or '' }}"
+            data-peak-to="{{ wine.peak_to or '' }}"
                   data-imbibed="{{ wine.date_imbibed or '' }}"
                   data-label="{{ wine.label or '' }}"></span></td>
       </tr>
       {% else %}
-      <tr id="wineEmptyRow"><td colspan="10">No wines in the cellar yet.</td></tr>
+      <tr id="wineEmptyRow"><td colspan="11">No wines in the cellar yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

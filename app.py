@@ -209,6 +209,8 @@ def api_add_beer():
         image_url=data.get('image_url'),
         untappd_rating=data.get('untappd_rating'),
         label=data.get('label'),
+        peak_from=data.get('peak_from'),
+        peak_to=data.get('peak_to'),
     )
     beer = enrich(db.get_beer(beer_id))
     if not data.get('skip_research'):
@@ -260,6 +262,9 @@ def api_update_beer(beer_id):
         considerations=data.get('considerations'),
         label=data.get('label'),
         untappd_rating=data.get('untappd_rating'),
+        # Clients that predate the peak fields don't send them; keep what's stored.
+        peak_from=data['peak_from'] if 'peak_from' in data else beer.get('peak_from'),
+        peak_to=data['peak_to'] if 'peak_to' in data else beer.get('peak_to'),
     )
     return jsonify(enrich(db.get_beer(beer_id)))
 
@@ -337,6 +342,8 @@ def api_add_wine():
         label=data.get('label'),
         grapeminds_id=data.get('grapeminds_id'),
         flavor_profile=data.get('flavor_profile'),
+        peak_from=data.get('peak_from'),
+        peak_to=data.get('peak_to'),
     )
     wine = enrich_wine(db.get_wine(wine_id))
     if not data.get('skip_research'):
@@ -372,6 +379,8 @@ def api_update_wine(wine_id):
         rating=data.get('rating'),
         rating_source=data.get('rating_source'),
         label=data.get('label'),
+        peak_from=data['peak_from'] if 'peak_from' in data else wine.get('peak_from'),
+        peak_to=data['peak_to'] if 'peak_to' in data else wine.get('peak_to'),
     )
     return jsonify(enrich_wine(db.get_wine(wine_id)))
 

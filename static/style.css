@@ -24,6 +24,8 @@ html { overflow-x: hidden; }
   --pink-text: #f7a8d0;
   --red: #7d2e2e;
   --red-text: #f08080;
+  --gold: #5e4410;
+  --gold-text: #f5c96a;
   --dim: #2a2a2a;
   --dim-text: #666;
 }
@@ -149,7 +151,7 @@ td.col-img {
 }
 
 /* Cells that must never wrap — date hyphens and numbers break without this */
-td.col-year, td.col-abv, td.col-drink-after, td.col-drink-by, td.col-days-left {
+td.col-year, td.col-abv, td.col-drink-after, td.col-peak, td.col-drink-by, td.col-days-left {
   white-space: nowrap;
 }
 
@@ -193,6 +195,7 @@ td.col-rating { padding-right: 1.25rem; }
 }
 
 .badge-drink-now      { background: var(--green);  color: var(--green-text); }
+.badge-at-peak        { background: var(--gold);   color: var(--gold-text); }
 .badge-approaching    { background: var(--pink);   color: var(--pink-text); }
 .badge-aging          { background: var(--blue);   color: var(--blue-text); }
 .badge-past-peak      { background: var(--red);    color: var(--red-text); }
@@ -504,7 +507,8 @@ tr[data-imbibed] td { opacity: 0.5; }
 /* Mobile (~540px): also hide Drink By and Year; keep Name, Brewer, Days Left, Status */
 @media (max-width: 540px) {
   th[data-col="year"], td.col-year,
-  th[data-col="drink_by"], td.col-drink-by { display: none; }
+  th[data-col="drink_by"], td.col-drink-by,
+  th[data-col="peak"], td.col-peak { display: none; }
   td.col-brewer { max-width: 90px; }
 
   /* Full-width layout on narrow phones — let padding provide the gutter */

@@ -76,7 +76,8 @@ if not image_url:
 
 payload = {k: data.get(k) for k in (
     'name', 'brewer', 'year', 'abv', 'date_bottled', 'drink_after', 'drink_by',
-    'research', 'food_pairings', 'considerations', 'untappd_rating', 'label')}
+    'research', 'food_pairings', 'considerations', 'untappd_rating', 'label',
+    'peak_from', 'peak_to')}
 payload.update(quantity=data.get('quantity', 1), image_url=image_url, skip_research=True)
 beer_id = remote.call('POST', '/api/beers', payload)['id']
 

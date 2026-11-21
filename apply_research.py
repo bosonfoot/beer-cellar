@@ -18,7 +18,8 @@ import db
 import remote
 
 FIELDS = ['name', 'brewer', 'year', 'abv', 'quantity', 'date_bottled', 'drink_after', 'drink_by',
-          'research', 'food_pairings', 'considerations', 'label']
+          'research', 'food_pairings', 'considerations', 'label', 'peak_from', 'peak_to',
+          'untappd_rating']
 
 
 def main():
@@ -40,8 +41,8 @@ def main():
             print(f'Skipping unknown beer id {u["id"]}')
             continue
         payload = {f: beer.get(f) for f in FIELDS}
-        for f in ('drink_after', 'drink_by', 'research'):
-            if u.get(f) is not None:
+        for f in ('drink_after', 'drink_by', 'research', 'peak_from', 'peak_to', 'untappd_rating'):
+            if f in u:
                 payload[f] = u[f]
         remote.call('PUT', f'/api/beers/{u["id"]}', payload)
         names.append(beer['name'])

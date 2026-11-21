@@ -42,9 +42,25 @@ Priority sources (best to worst):
 Return ONLY a JSON object — no prose before or after — with these fields:
 {
   "drink_after": "YYYY-MM or null",
+  "peak_from": "YYYY-MM or null",
+  "peak_to": "YYYY-MM or null",
   "drink_by": "YYYY-MM or null",
   "research": "2-3 sentences citing your source and reasoning"
 }
+
+What the dates mean:
+  - drink_after: when the beer is ready and drinking well — NOT when it peaks. If the brewer says
+    it is "drinking nicely now" but will improve, drink_after is now (or the release date).
+  - peak_from / peak_to: the period when the beer is at its best. Fill these ONLY when a source
+    names a specific peak ("should really peak this summer/fall", "at its best June-October 2026",
+    "will continue to improve over the next 6 months", "probably not peak until spring 2027").
+    Convert relative phrases to months using the date the note was written (the release date, or
+    the bottling date if that's all you have): spring = Mar-May, summer = Jun-Aug, fall = Sep-Nov,
+    winter = Dec-Feb. "Improve over the next N months" means peak_from = note date + N months.
+    If the source gives a single moment ("peak spring 2027"), use that season's months. If only a
+    start is known, give a ~3-month window. Leave both null for vague statements like "will
+    develop with age" or "should age gracefully", and never derive a peak from a style guide.
+  - drink_by: when the beer starts to decline (the brewer's "best before" date).
 
 Date format: YYYY-MM (year and month). If only a year is known, use YYYY-01.
 
@@ -82,14 +98,17 @@ def run(beer_id, name, brewer, style=None, year=None, date_bottled=None, conside
             drink_after=data.get('drink_after'),
             drink_by=data.get('drink_by'),
             research=data.get('research'),
+            peak_from=data.get('peak_from'),
+            peak_to=data.get('peak_to'),
         )
         print(f'[research] DB updated for beer {beer_id}')
 
 
 def fetch_research(name, brewer, style=None, year=None, date_bottled=None, considerations=None,
-                    existing_drink_after=None, existing_drink_by=None, existing_research=None):
-    """Search the web for a beer's drinking window. Returns {drink_after, drink_by, research}
-    or None on failure — does NOT write to the DB.
+                    existing_drink_after=None, existing_drink_by=None, existing_research=None,
+                    existing_peak_from=None, existing_peak_to=None):
+    """Search the web for a beer's drinking window. Returns {drink_after, drink_by, peak_from,
+    peak_to, research} or None on failure — does NOT write to the DB.
 
     Pass existing_* to re-research a beer that already has findings — the model is instructed
     to only overwrite them with something more authoritative, not re-derive from scratch."""
@@ -118,6 +137,8 @@ def fetch_research(name, brewer, style=None, year=None, date_bottled=None, consi
             f'\n\nYour prior findings for this beer (only overwrite if you find something more '
             f'authoritative — see instructions):\n'
             f'  drink_after: {existing_drink_after or "unknown"}\n'
+            f'  peak_from: {existing_peak_from or "unknown"}\n'
+            f'  peak_to: {existing_peak_to or "unknown"}\n'
             f'  drink_by: {existing_drink_by or "unknown"}\n'
             f'  research: {existing_research or "none"}'
         )
@@ -192,6 +213,8 @@ def fetch_research(name, brewer, style=None, year=None, date_bottled=None, consi
         return {
             'drink_after': data.get('drink_after') or None,
             'drink_by': data.get('drink_by') or None,
+            'peak_from': data.get('peak_from') or None,
+            'peak_to': data.get('peak_to') or None,
             'research': research_text or None,
         }
     except json.JSONDecodeError as e:

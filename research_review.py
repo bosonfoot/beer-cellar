@@ -33,7 +33,8 @@ def month(val):
 
 def diff_beer(beer, new):
     changes = []
-    for field, label in (('drink_after', 'Drink after'), ('drink_by', 'Drink by')):
+    for field, label in (('drink_after', 'Drink after'), ('peak_from', 'Peak from'),
+                         ('peak_to', 'Peak to'), ('drink_by', 'Drink by')):
         old_val, new_val = beer.get(field), new.get(field)
         if month(old_val) != month(new_val):
             changes.append((label, old_val, new_val))
@@ -71,6 +72,8 @@ def main():
             existing_drink_after=beer.get('drink_after'),
             existing_drink_by=beer.get('drink_by'),
             existing_research=beer.get('research'),
+            existing_peak_from=beer.get('peak_from'),
+            existing_peak_to=beer.get('peak_to'),
         )
         if not new:
             print('  -> research failed, skipping')

@@ -63,7 +63,8 @@ elif not exact and existing_producers and not data.get('force'):
 payload = {k: data.get(k) for k in (
     'name', 'producer', 'year', 'region', 'appellation', 'varietal', 'wine_type',
     'date_bottled', 'drink_after', 'drink_by', 'research', 'considerations',
-    'image_url', 'rating', 'rating_source', 'label', 'grapeminds_id', 'flavor_profile')}
+    'image_url', 'rating', 'rating_source', 'label', 'grapeminds_id', 'flavor_profile',
+    'peak_from', 'peak_to')}
 payload.update(quantity=data.get('quantity', 1), skip_research=True)
 wine_id = remote.call('POST', '/api/wines', payload)['id']
 
