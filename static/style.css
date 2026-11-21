@@ -207,6 +207,20 @@ td.days-aging      { color: var(--blue-text); }
 td.days-soon       { color: var(--yellow-text); }
 td.days-urgent     { color: var(--red-text); font-weight: 600; }
 
+/* "NEW" pill for beers added in the last 30 days */
+.new-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  background: var(--green);
+  color: var(--green-text);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
 /* Quantity pill */
 .qty-badge {
   display: inline-block;

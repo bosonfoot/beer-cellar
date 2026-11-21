@@ -45,8 +45,27 @@ const STATUS_CLASS = {
   'Test':             'badge-test',
 };
 
+// Adds a "NEW" pill after the name of unimbibed beers added in the last 30 days.
+// The pill's text is part of the name cell, so typing "new" in search finds them.
+function applyNewBadges() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  document.querySelectorAll('tr.beer-row').forEach(row => {
+    const nameTd = row.querySelector('td.beer-name');
+    if (row.dataset.imbibed || !row.dataset.added || row.dataset.added < cutoffStr) return;
+    if (nameTd.querySelector('.new-badge')) return;
+    const badge = '<span class="new-badge">NEW</span>';
+    const qty = nameTd.querySelector('.qty-badge');
+    if (qty) qty.insertAdjacentHTML('beforebegin', badge + ' ');
+    else nameTd.insertAdjacentHTML('beforeend', ' ' + badge);
+  });
+}
+
 function applyBadges() {
   // Beer badges only — wine badges are handled by applyWineBadges()
+  applyNewBadges();
+
   document.querySelectorAll('.badge[data-after]:not(.wine-badge)').forEach(el => {
     const status = getStatus(el.dataset.after, el.dataset.by, el.dataset.imbibed, el.dataset.label);
     el.textContent = status;
@@ -842,6 +861,7 @@ function injectNewBeerRow(beer) {
   tr.className = 'beer-row';
   tr.dataset.id = beer.id;
   tr.dataset.qty = beer.quantity || 1;
+  tr.dataset.added = beer.date_added || '';
   if (beer.date_imbibed) tr.dataset.imbibed = '1';
   tr.innerHTML = `
     <td class="col-img"><img class="beer-thumb" src="${imgSrc}" alt="${esc(beer.name)}" onerror="this.src='/static/images/default.svg'"></td>
